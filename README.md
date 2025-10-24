@@ -165,21 +165,28 @@ This enables seamless use of both Claude Code and Codex CLI on the same codebase
 
 ## How It Works
 
-**SessionStart Hook**:
+**Dual Detection System**:
+
+**1. SessionStart Hook** (lower threshold):
 - When you start or resume a Claude Code session
-- Interdoc checks for commits since last CLAUDE.md update
-- If 3+ commits or significant changes found
-- Automatically prompts Claude to analyze and present suggestions
+- Checks for 3+ commits or significant changes
+- Automatically triggers Interdoc to analyze and present suggestions
+
+**2. PostToolUse Hook** (higher threshold):
+- Detects when Claude makes git commits during a session
+- Triggers Interdoc after 10+ commits since last CLAUDE.md update
+- Catches large batches of work mid-session without waiting for next startup
 
 **Thresholds**:
-- **3+ commits**: General activation threshold
+- **SessionStart**: 3+ commits (catches up at beginning)
+- **PostToolUse**: 10+ commits (catches major work mid-session)
 - **Significant changes**: New files, config changes, structural changes
-- Activates on either condition
+- Activates on any of these conditions
 
-**Frequency**:
-- Checks on session start/resume only
-- Won't interrupt during a session
-- Non-intrusive and ambient
+**Smart Triggering**:
+- Uses state tracking to avoid duplicate triggers
+- Only triggers once until CLAUDE.md is updated
+- Non-intrusive and ambient throughout your session
 
 ## Design Philosophy
 

@@ -11,12 +11,24 @@ Keep CLAUDE.md documentation current by detecting significant code changes and s
 
 ## When to Use This Skill
 
-**Automatic invocation** (primary mode):
-- SessionStart hook checks for pending updates when user starts/resumes a session
-- Automatically triggers if 3+ commits since last CLAUDE.md update
+**Automatic invocation** (primary mode - dual detection):
+
+**SessionStart Hook** (lower threshold):
+- Checks when user starts/resumes a session
+- Triggers if 3+ commits since last CLAUDE.md update
 - Or if significant changes detected (new files, config changes)
-- You proactively analyze commits and present suggestions
-- User approves/rejects without having to manually invoke
+- Catches up on pending documentation at session start
+
+**PostToolUse Hook** (higher threshold):
+- Detects when Claude makes git commits during the session
+- Triggers after 10+ commits since last CLAUDE.md update
+- Catches large batches of work mid-session
+- Only triggers once until CLAUDE.md is updated (prevents spam)
+
+**Both hooks**:
+- Inject prompts that automatically invoke this skill
+- User approves/rejects suggestions without manual invocation
+- Smart state tracking prevents duplicate triggers
 
 **Manual invocation** (optional):
 - User explicitly requests: "update CLAUDE.md", "review documentation", "document recent changes"
