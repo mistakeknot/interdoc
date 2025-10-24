@@ -6,12 +6,13 @@ Interdoc is a Claude Code plugin that detects significant code changes and sugge
 
 ## Features
 
-- **Automatic detection**: Detects when Claude makes commits and shows gentle reminders
+- **Fully automatic**: Activates automatically when you start a session if there are pending updates
+- **Ambient operation**: Runs in the background, you approve suggestions without manual invocation
 - **Smart categorization**: Groups changes into Architecture, Implementation, Dependencies, and Conventions
 - **Adaptive structure**: Matches your existing CLAUDE.md style and format
 - **Mono-repo support**: Handles multiple CLAUDE.md files intelligently
 - **Cross-AI compatibility**: Automatically creates AGENTS.md redirects for Codex CLI
-- **Non-intrusive**: Only reminds at thresholds (3, 5, 10+ commits since last update)
+- **Non-intrusive**: Only activates at meaningful thresholds (3+ commits or significant changes)
 
 ## Installation
 
@@ -38,21 +39,33 @@ cd interdoc
 
 ## Usage
 
-### Automatic Detection
+### Automatic Operation (Default)
 
-When Claude makes commits in your project, Interdoc automatically tracks them and shows gentle reminders:
+Interdoc works automatically in the background:
 
-```bash
-# After Claude commits changes...
-# (3rd, 5th, 10th, etc. commit since last CLAUDE.md update)
+1. **You work** - Make changes, Claude commits them
+2. **Start a session** - When you start/resume Claude Code
+3. **Interdoc activates** - If there are 3+ commits or significant changes since last CLAUDE.md update
+4. **Claude presents suggestions** - Automatically analyzes commits and suggests documentation updates
+5. **You approve** - Review and approve/reject/edit each suggestion
 
-💡 Interdoc reminder: 5 commits since last CLAUDE.md update
-   Consider running: 'update CLAUDE.md' to review documentation needs
+**Example session start:**
+```
+Claude: I noticed there are 5 commits since CLAUDE.md was last updated.
+Let me analyze them and suggest documentation updates.
+
+[Interdoc automatically runs, analyzes commits, presents suggestions]
+
+Found 2 categories of changes:
+1. Architecture: New authentication system
+2. Dependencies: Redis integration
+
+Would you like to review these suggestions?
 ```
 
-### Manual Invocation
+### Manual Invocation (Optional)
 
-Invoke Interdoc anytime to review documentation needs:
+You can also invoke Interdoc manually anytime:
 
 ```
 update CLAUDE.md
@@ -63,8 +76,6 @@ or
 ```
 review documentation
 ```
-
-Claude will analyze commits since the last CLAUDE.md update and suggest relevant additions.
 
 ## What Gets Documented
 
@@ -152,31 +163,23 @@ architecture, conventions, and lessons learned are maintained in CLAUDE.md.
 
 This enables seamless use of both Claude Code and Codex CLI on the same codebase with a single source of truth.
 
-## Optional: Git Post-Commit Hook
+## How It Works
 
-For automatic detection, you can set up a git post-commit hook manually:
+**SessionStart Hook**:
+- When you start or resume a Claude Code session
+- Interdoc checks for commits since last CLAUDE.md update
+- If 3+ commits or significant changes found
+- Automatically prompts Claude to analyze and present suggestions
 
-1. **Copy the hook script** from `hooks/post-commit` in this repository
-2. **Place it** in your project's `.git/hooks/post-commit`
-3. **Make it executable**: `chmod +x .git/hooks/post-commit`
+**Thresholds**:
+- **3+ commits**: General activation threshold
+- **Significant changes**: New files, config changes, structural changes
+- Activates on either condition
 
-The hook will:
-- Detect significant changes after each commit
-- Log commits that may need documentation
-- Show reminders at thresholds (3, 5, 10 commits)
-
-**Note**: Git hooks are per-repository and not automatically installed by Claude Code plugins.
-
-### Adjusting Hook Sensitivity
-
-Edit `.git/hooks/post-commit` in your project to tune thresholds:
-
-```bash
-# Trigger on N+ files (default: 3)
-if [ "$FILES_CHANGED" -ge 3 ]; then
-    SIGNIFICANT=1
-fi
-```
+**Frequency**:
+- Checks on session start/resume only
+- Won't interrupt during a session
+- Non-intrusive and ambient
 
 ## Design Philosophy
 

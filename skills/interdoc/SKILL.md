@@ -11,16 +11,17 @@ Keep CLAUDE.md documentation current by detecting significant code changes and s
 
 ## When to Use This Skill
 
-**Automatic reminders**:
-- PostToolUse hook detects when commits are made
-- Shows reminders at thresholds (3, 5, 10, 15, 20 commits since last CLAUDE.md update)
-- Non-intrusive - only suggests, doesn't force
+**Automatic invocation** (primary mode):
+- SessionStart hook checks for pending updates when user starts/resumes a session
+- Automatically triggers if 3+ commits since last CLAUDE.md update
+- Or if significant changes detected (new files, config changes)
+- You proactively analyze commits and present suggestions
+- User approves/rejects without having to manually invoke
 
-**Manual invocation**:
-- User requests: "update CLAUDE.md", "review documentation", "document recent changes"
+**Manual invocation** (optional):
+- User explicitly requests: "update CLAUDE.md", "review documentation", "document recent changes"
 - After feature completion or before creating PR
-- Batch review of multiple commits
-- When you notice CLAUDE.md is out of sync with recent changes
+- When user wants to review even if threshold not met
 
 ## Core Workflow
 
