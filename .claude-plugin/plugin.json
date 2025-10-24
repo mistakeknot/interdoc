@@ -7,5 +7,5 @@
     "email": "mistakeknot@vibeguider.org"
   },
   "skills": ["./skills/interdoc"],
-  "hooks": ["./hooks/post-commit"]
+  "hooks": ["./hooks/hooks.json"]
 }
