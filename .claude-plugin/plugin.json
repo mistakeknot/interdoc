@@ -1,7 +1,7 @@
 {
   "name": "interdoc",
-  "version": "2.0.0",
-  "description": "Automatic, ambient CLAUDE.md maintenance - detects changes when you start a session and proactively suggests documentation updates without manual invocation",
+  "version": "2.1.0",
+  "description": "Automatic, ambient CLAUDE.md maintenance - detects changes at session start and during commits, proactively suggests documentation updates without manual invocation",
   "author": {
     "name": "MK",
     "email": "mistakeknot@vibeguider.org"
