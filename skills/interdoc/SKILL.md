@@ -11,13 +11,16 @@ Keep CLAUDE.md documentation current by detecting significant code changes and s
 
 ## When to Use This Skill
 
+**Automatic reminders**:
+- PostToolUse hook detects when commits are made
+- Shows reminders at thresholds (3, 5, 10, 15, 20 commits since last CLAUDE.md update)
+- Non-intrusive - only suggests, doesn't force
+
 **Manual invocation**:
 - User requests: "update CLAUDE.md", "review documentation", "document recent changes"
 - After feature completion or before creating PR
 - Batch review of multiple commits
 - When you notice CLAUDE.md is out of sync with recent changes
-
-**Note**: Users can optionally set up a git post-commit hook (see plugin README) for automatic detection, but the skill itself is always manually invoked.
 
 ## Core Workflow
 

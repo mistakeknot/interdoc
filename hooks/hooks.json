@@ -1,12 +1,12 @@
 {
   "hooks": {
-    "PostCommit": [
+    "PostToolUse": [
       {
         "matcher": ".*",
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/post-commit"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/check-commit.sh"
           }
         ]
       }

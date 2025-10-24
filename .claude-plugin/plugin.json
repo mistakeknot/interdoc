@@ -6,5 +6,6 @@
     "name": "MK",
     "email": "mistakeknot@vibeguider.org"
   },
-  "skills": ["./skills/interdoc"]
+  "skills": ["./skills/interdoc"],
+  "hooks": ["./hooks/hooks.json"]
 }

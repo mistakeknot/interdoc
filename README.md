@@ -6,12 +6,12 @@ Interdoc is a Claude Code plugin that detects significant code changes and sugge
 
 ## Features
 
-- **Manual invocation**: Run when ready to review documentation needs
+- **Automatic detection**: Detects when Claude makes commits and shows gentle reminders
 - **Smart categorization**: Groups changes into Architecture, Implementation, Dependencies, and Conventions
 - **Adaptive structure**: Matches your existing CLAUDE.md style and format
 - **Mono-repo support**: Handles multiple CLAUDE.md files intelligently
 - **Cross-AI compatibility**: Automatically creates AGENTS.md redirects for Codex CLI
-- **Optional git hook**: Instructions for automatic detection via git post-commit hook
+- **Non-intrusive**: Only reminds at thresholds (3, 5, 10+ commits since last update)
 
 ## Installation
 
@@ -38,9 +38,21 @@ cd interdoc
 
 ## Usage
 
-### Basic Usage
+### Automatic Detection
 
-Invoke Interdoc when you're ready to review documentation needs:
+When Claude makes commits in your project, Interdoc automatically tracks them and shows gentle reminders:
+
+```bash
+# After Claude commits changes...
+# (3rd, 5th, 10th, etc. commit since last CLAUDE.md update)
+
+💡 Interdoc reminder: 5 commits since last CLAUDE.md update
+   Consider running: 'update CLAUDE.md' to review documentation needs
+```
+
+### Manual Invocation
+
+Invoke Interdoc anytime to review documentation needs:
 
 ```
 update CLAUDE.md
