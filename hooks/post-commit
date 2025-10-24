@@ -1,0 +1,47 @@
+#!/bin/bash
+# Interdoc post-commit hook
+# Detects significant changes and logs for later review
+
+# Get the current commit
+COMMIT=$(git rev-parse HEAD)
+
+# Quick significance check
+FILES_CHANGED=$(git diff-tree --no-commit-id --name-only -r "$COMMIT" | wc -l | tr -d ' ')
+NEW_DIRS=$(git diff-tree --no-commit-id --name-only --diff-filter=A -r "$COMMIT" | grep -c '/' || echo 0)
+CONFIG_CHANGED=$(git diff-tree --no-commit-id --name-only -r "$COMMIT" | grep -E '(package\.json|tsconfig\.json|Cargo\.toml|requirements\.txt|go\.mod|\.claude-plugin)' | wc -l | tr -d ' ')
+
+# Check if significant
+SIGNIFICANT=0
+
+# New directories created
+if [ "$NEW_DIRS" -gt 0 ]; then
+    SIGNIFICANT=1
+fi
+
+# 3+ files changed
+if [ "$FILES_CHANGED" -ge 3 ]; then
+    SIGNIFICANT=1
+fi
+
+# Config files changed
+if [ "$CONFIG_CHANGED" -gt 0 ]; then
+    SIGNIFICANT=1
+fi
+
+# If significant, log it
+if [ "$SIGNIFICANT" -eq 1 ]; then
+    echo "$COMMIT" >> .git/interdoc-pending
+
+    # Count pending
+    if [ -f .git/interdoc-pending ]; then
+        PENDING=$(wc -l < .git/interdoc-pending | tr -d ' ')
+
+        # Show reminder at thresholds
+        if [ "$PENDING" -eq 3 ] || [ "$PENDING" -eq 5 ] || [ "$PENDING" -eq 10 ]; then
+            echo ""
+            echo "💡 Tip: $PENDING commits may need CLAUDE.md updates"
+            echo "   Run: 'update CLAUDE.md' to review"
+            echo ""
+        fi
+    fi
+fi

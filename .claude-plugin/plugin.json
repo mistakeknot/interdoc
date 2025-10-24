@@ -1,0 +1,11 @@
+{
+  "name": "interdoc",
+  "version": "1.0.0",
+  "description": "Keep CLAUDE.md documentation up-to-date automatically by detecting significant code changes and suggesting relevant updates",
+  "author": {
+    "name": "MK",
+    "email": "mistakeknot@vibeguider.org"
+  },
+  "skills": ["./skills/interdoc"],
+  "hooks": ["./hooks/post-commit"]
+}
