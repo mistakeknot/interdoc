@@ -11,14 +11,13 @@ Keep CLAUDE.md documentation current by detecting significant code changes and s
 
 ## When to Use This Skill
 
-**Automatic triggers**:
-- Post-commit hook detects significant changes
-- Pending suggestions accumulate in `.git/interdoc-pending`
-
 **Manual invocation**:
 - User requests: "update CLAUDE.md", "review documentation", "document recent changes"
 - After feature completion or before creating PR
 - Batch review of multiple commits
+- When you notice CLAUDE.md is out of sync with recent changes
+
+**Note**: Users can optionally set up a git post-commit hook (see plugin README) for automatic detection, but the skill itself is always manually invoked.
 
 ## Core Workflow
 
@@ -276,41 +275,23 @@ CLAUDE.md appears up-to-date.
 
 Clear pending queue if it exists.
 
-## Smart Detection (For Post-Commit Hook)
+## Analyzing Change Significance
 
-When triggered by post-commit hook, quickly assess if changes are significant:
+When analyzing commits, prioritize changes that are:
 
-**Significant if ANY**:
-1. New directories created
-2. 3+ files changed
-3. Config files modified (package.json, tsconfig.json, .claude-plugin/*, Cargo.toml, etc.)
-4. Files moved/renamed
-5. New file type introduced
+**Highly significant**:
+- New directories created
+- 3+ files changed in related commits
+- Config files modified (package.json, tsconfig.json, .claude-plugin/*, Cargo.toml, etc.)
+- Files moved/renamed (refactoring)
+- New file type introduced (tech stack changes)
 
-**Skip if ALL**:
-1. Single file changed
-2. File is markdown
-3. Diff < 50 lines
-4. No new files/directories
+**Less significant** (can skip or summarize):
+- Single file changed with < 50 lines
+- Markdown files (likely already documented)
+- Pure formatting or typo fixes
 
-If significant:
-- Log to `.git/interdoc-pending`
-- Show reminder if pending count grows
-
-If not significant:
-- Skip silently
-
-## Batching Strategy
-
-**Don't interrupt during rapid iteration**:
-- Post-commit hook logs pending but doesn't invoke full workflow
-- User gets one-line reminder: `💡 Tip: [N] commits may need CLAUDE.md updates`
-- User runs manual review when ready
-
-**Threshold for active prompting**:
-- After 5+ significant commits, be more insistent
-- After 10+ significant commits, strongly recommend review
-- But never force - user always in control
+Apply judgment - not every commit needs documentation, but architectural changes and important lessons learned should be captured.
 
 ## Output Format
 

@@ -6,11 +6,12 @@ Interdoc is a Claude Code plugin that detects significant code changes and sugge
 
 ## Features
 
-- **Automatic detection**: Post-commit hook identifies significant changes
+- **Manual invocation**: Run when ready to review documentation needs
 - **Smart categorization**: Groups changes into Architecture, Implementation, Dependencies, and Conventions
-- **Non-intrusive workflow**: Batches suggestions, doesn't interrupt rapid iteration
+- **Adaptive structure**: Matches your existing CLAUDE.md style and format
 - **Mono-repo support**: Handles multiple CLAUDE.md files intelligently
 - **Cross-AI compatibility**: Automatically creates AGENTS.md redirects for Codex CLI
+- **Optional git hook**: Instructions for automatic detection via git post-commit hook
 
 ## Installation
 
@@ -37,23 +38,9 @@ cd interdoc
 
 ## Usage
 
-### Automatic (Recommended)
+### Basic Usage
 
-The post-commit hook automatically detects significant changes:
-
-```bash
-git commit -m "Add new authentication system"
-# Hook detects: new files, architectural changes
-# Logs for later review
-
-# After 3+ significant commits:
-💡 Tip: 3 commits may need CLAUDE.md updates
-   Run: 'update CLAUDE.md' to review
-```
-
-### Manual Invocation
-
-Review pending updates anytime:
+Invoke Interdoc when you're ready to review documentation needs:
 
 ```
 update CLAUDE.md
@@ -153,26 +140,30 @@ architecture, conventions, and lessons learned are maintained in CLAUDE.md.
 
 This enables seamless use of both Claude Code and Codex CLI on the same codebase with a single source of truth.
 
-## Configuration
+## Optional: Git Post-Commit Hook
 
-### Adjusting Sensitivity
+For automatic detection, you can set up a git post-commit hook manually:
 
-Edit `.git/hooks/post-commit` to tune detection thresholds:
+1. **Copy the hook script** from `hooks/post-commit` in this repository
+2. **Place it** in your project's `.git/hooks/post-commit`
+3. **Make it executable**: `chmod +x .git/hooks/post-commit`
+
+The hook will:
+- Detect significant changes after each commit
+- Log commits that may need documentation
+- Show reminders at thresholds (3, 5, 10 commits)
+
+**Note**: Git hooks are per-repository and not automatically installed by Claude Code plugins.
+
+### Adjusting Hook Sensitivity
+
+Edit `.git/hooks/post-commit` in your project to tune thresholds:
 
 ```bash
 # Trigger on N+ files (default: 3)
 if [ "$FILES_CHANGED" -ge 3 ]; then
     SIGNIFICANT=1
 fi
-```
-
-### Reminder Frequency
-
-Adjust when reminders appear:
-
-```bash
-# Show at these pending counts (default: 3, 5, 10)
-if [ "$PENDING" -eq 3 ] || [ "$PENDING" -eq 5 ] || [ "$PENDING" -eq 10 ]; then
 ```
 
 ## Design Philosophy
