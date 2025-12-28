@@ -1,18 +1,16 @@
 # Interdoc
 
-**Keep CLAUDE.md documentation up-to-date automatically**
+**Recursive CLAUDE.md generator using parallel subagents**
 
-Interdoc is a Claude Code plugin that detects significant code changes and suggests relevant CLAUDE.md documentation updates. It reduces manual maintenance burden while keeping humans in control.
+Interdoc generates and maintains CLAUDE.md documentation for your projects. It spawns parallel subagents to analyze each directory, then consolidates their findings into coherent documentation that helps coding agents understand your codebase.
 
 ## Features
 
-- **Fully automatic**: Activates automatically when you start a session if there are pending updates
-- **Ambient operation**: Runs in the background, you approve suggestions without manual invocation
-- **Smart categorization**: Groups changes into Architecture, Implementation, Dependencies, and Conventions
-- **Adaptive structure**: Matches your existing CLAUDE.md style and format
-- **Mono-repo support**: Handles multiple CLAUDE.md files intelligently
-- **Cross-AI compatibility**: Automatically creates AGENTS.md redirects for Codex CLI
-- **Non-intrusive**: Only activates at meaningful thresholds (3+ commits or significant changes)
+- **Parallel subagents**: Spawns agents per directory for fast analysis
+- **Smart scoping**: Each subagent decides if its directory warrants a CLAUDE.md
+- **Consolidation**: Root agent deduplicates patterns and identifies cross-cutting concerns
+- **Two modes**: Generation (new projects) and Update (existing documentation)
+- **Cross-AI compatible**: Creates AGENTS.md redirects for Codex CLI
 
 ## Installation
 
@@ -29,259 +27,146 @@ Interdoc is a Claude Code plugin that detects significant code changes and sugge
 ### Manual Installation
 
 ```bash
-# Clone the repository
 git clone https://github.com/mistakeknot/interdoc.git
-
-# Install the plugin
 cd interdoc
 /plugin install .
 ```
 
 ## Usage
 
-### Automatic Operation (Default)
+### Manual: `/interdoc`
 
-Interdoc works automatically in the background:
-
-1. **You work** - Make changes, Claude commits them
-2. **Start a session** - When you start/resume Claude Code
-3. **Interdoc activates** - If there are 3+ commits or significant changes since last CLAUDE.md update
-4. **Claude presents suggestions** - Automatically analyzes commits and suggests documentation updates
-5. **You approve** - Review and approve/reject/edit each suggestion
-
-**Example session start:**
-```
-Claude: I noticed there are 5 commits since CLAUDE.md was last updated.
-Let me analyze them and suggest documentation updates.
-
-[Interdoc automatically runs, analyzes commits, presents suggestions]
-
-Found 2 categories of changes:
-1. Architecture: New authentication system
-2. Dependencies: Redis integration
-
-Would you like to review these suggestions?
-```
-
-### Manual Invocation (Optional)
-
-You can also invoke Interdoc manually anytime:
+Run `/interdoc` to generate or update documentation:
 
 ```
-update CLAUDE.md
+/interdoc
 ```
 
-or
+The skill automatically detects which mode to use:
+- **No CLAUDE.md exists** → Generation mode (full recursive pass)
+- **CLAUDE.md exists** → Update mode (analyze changes, update relevant sections)
 
-```
-review documentation
-```
+### Automatic: Hooks
 
-## What Gets Documented
+Interdoc includes hooks that suggest running `/interdoc`:
 
-Interdoc suggests updates for:
-
-### Architecture Changes
-- New directories or major reorganization
-- Changes to build/config files
-- New file types (tech stack changes)
-
-### Implementation Details
-- Bug fixes with non-obvious solutions
-- Complex logic or workarounds
-- Performance optimizations
-- Important gotchas
-
-### Dependencies
-- New packages or libraries
-- Dependency updates
-- Plugin additions
-
-### Conventions
-- Consistent patterns across multiple files
-- New naming or structure patterns
-- Workflow changes
-
-## Workflow
-
-1. **Detection**: Hook identifies significant commits
-2. **Batching**: Suggestions accumulate without interruption
-3. **Review**: User runs manual review when ready
-4. **Categorization**: Claude groups changes by category
-5. **Suggestions**: Proposed updates match existing CLAUDE.md style
-6. **Approval**: User approves, edits, or rejects each suggestion
-7. **Application**: Claude updates CLAUDE.md and creates AGENTS.md
-8. **Commit**: Documentation changes committed to git
-
-## Edge Cases Handled
-
-### Missing CLAUDE.md
-
-Interdoc offers to create a minimal template:
-
-```markdown
-# CLAUDE.md
-
-## Repository Purpose
-## Architecture
-## Current Status
-## Key Conventions
-```
-
-### Mono-repos
-
-Automatically detects mono-repo structure and creates CLAUDE.md files per package:
-
-```
-packages/api/CLAUDE.md
-packages/shared/CLAUDE.md
-./CLAUDE.md (root)
-```
-
-Updates target the appropriate file based on changed code.
-
-### Large Refactors
-
-For massive changes (>50 files), focuses on architectural patterns rather than overwhelming detail.
-
-### Merge Commits
-
-Analyzes the combined merge diff and flags large merges for review.
-
-## Cross-AI Compatibility
-
-Interdoc automatically creates AGENTS.md files for Codex CLI compatibility:
-
-```markdown
-# Agent Context
-
-For complete project documentation, read CLAUDE.md in this directory.
-
-This file exists for Codex CLI compatibility. All project guidance,
-architecture, conventions, and lessons learned are maintained in CLAUDE.md.
-```
-
-This enables seamless use of both Claude Code and Codex CLI on the same codebase with a single source of truth.
+- **SessionStart**: Suggests when no CLAUDE.md exists or 3+ commits since last update
+- **PostToolUse**: Suggests after 10+ commits accumulate mid-session
 
 ## How It Works
 
-**Dual Detection System**:
+### Generation Mode
 
-**1. SessionStart Hook** (lower threshold):
-- When you start or resume a Claude Code session
-- Checks for 3+ commits or significant changes
-- Automatically triggers Interdoc to analyze and present suggestions
+1. **Analyze structure** - Find directories with source files and package manifests
+2. **Spawn subagents** - One per directory, running in parallel
+3. **Each subagent**:
+   - Reads source files, READMEs, configs
+   - Extracts purpose, key files, patterns, conventions, gotchas
+   - Decides if directory warrants its own CLAUDE.md
+   - Returns structured output
+4. **Consolidate** - Deduplicate patterns, harmonize terminology, identify cross-cutting concerns
+5. **Write files** - Root CLAUDE.md + per-directory CLAUDE.md + AGENTS.md redirects
+6. **Commit** - All documentation committed to git
 
-**2. PostToolUse Hook** (higher threshold):
-- Detects when Claude makes git commits during a session
-- Triggers Interdoc after 10+ commits since last CLAUDE.md update
-- Catches large batches of work mid-session without waiting for next startup
+### Update Mode
 
-**Thresholds**:
-- **SessionStart**: 3+ commits (catches up at beginning)
-- **PostToolUse**: 10+ commits (catches major work mid-session)
-- **Significant changes**: New files, config changes, structural changes
-- Activates on any of these conditions
+1. **Detect changes** - Find directories modified since last CLAUDE.md update
+2. **Spawn targeted subagents** - Only for changed directories
+3. **Analyze changes** - What's new, what's stale
+4. **Present for approval** - User reviews proposed updates
+5. **Apply and commit** - Update files, preserve existing content
 
-**Smart Triggering**:
-- Uses state tracking to avoid duplicate triggers
-- Only triggers once until CLAUDE.md is updated
-- Non-intrusive and ambient throughout your session
+## What Gets Documented
 
-## Design Philosophy
+Subagents extract information useful for coding agents:
 
-1. **Human control**: You approve all changes
-2. **Non-intrusive**: Never interrupts your flow
-3. **Context-aware**: Matches your CLAUDE.md style
-4. **Helpful defaults**: Creates files, handles edge cases automatically
-5. **Apply judgment**: Not every change needs documentation
+- **Purpose** - What does this code do?
+- **Key files** - Important files and their roles
+- **Architecture** - How components connect, data flow
+- **Conventions** - Naming patterns, code style, structure
+- **Dependencies** - What the code relies on
+- **Gotchas** - Non-obvious behavior, known issues
+- **Commands** - Build, test, run
 
-## Examples
-
-### After Feature Implementation
-
-```
-You: update CLAUDE.md
-
-Claude: I've analyzed 8 commits since the last update (3 days ago).
-
-Found 2 categories of changes:
-
-1. 🏗️  Architecture: New authentication system
-   - Added JWT middleware
-   - Created auth/ directory structure
-
-2. 📦 Dependencies: Redis integration
-   - Added redis and ioredis packages
-   - Configured session storage
-
-Would you like to review suggestions?
-
-You: yes
-
-Claude: [Shows detailed suggestions for each category]
-
-## Architecture: New Authentication System
-
-**Commits**:
-- abc123: Add JWT middleware
-- def456: Create user auth flow
-
-**Proposed Documentation**:
-
-### Authentication System
-
-The application uses JWT-based authentication with refresh tokens.
-Key components:
-- `auth/middleware.ts` - JWT verification
-- `auth/tokens.ts` - Token generation and refresh
-- Session data stored in Redis for scalability
-
-**Why this matters**:
-Future work on auth should follow this JWT pattern. Refresh tokens
-expire after 7 days and require re-authentication.
-
----
-Add to CLAUDE.md? (yes/no/edit)
-```
-
-### Mono-repo Detection
+## Directory Structure
 
 ```
-You: update CLAUDE.md
-
-Claude: I detected this is a mono-repo.
-
-Your recent commits affected:
-- packages/api/ (3 commits)
-- packages/ui/ (2 commits)
-
-I'll update:
-- packages/api/CLAUDE.md (API-specific changes)
-- packages/ui/CLAUDE.md (UI-specific changes)
-
-[Proceeds with suggestions for each package]
+interdoc/
+├── .claude-plugin/
+│   └── plugin.json         # Plugin metadata
+├── hooks/
+│   ├── hooks.json          # Hook configuration
+│   ├── check-updates.sh    # SessionStart hook
+│   └── check-commit.sh     # PostToolUse hook
+├── skills/
+│   └── interdoc/
+│       └── SKILL.md        # Main skill definition
+└── README.md
 ```
 
-## Contributing
+## Example
 
-Contributions welcome! Please:
+### New Project
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+```
+User: /interdoc
+
+Claude: I'll generate CLAUDE.md documentation for this project.
+
+Analyzing project structure...
+Found 4 directories to document:
+- / (root)
+- /src/api/
+- /src/core/
+- /packages/shared/
+
+Spawning subagents to analyze each directory...
+
+[Subagents run in parallel]
+
+Consolidation complete. Created:
+- /CLAUDE.md (root documentation)
+- /src/api/CLAUDE.md
+- /packages/shared/CLAUDE.md
+- AGENTS.md redirects for each
+
+Committed: "Generate CLAUDE.md documentation"
+```
+
+### Existing Project
+
+```
+User: /interdoc
+
+Claude: CLAUDE.md exists. Checking for changes...
+
+Found 5 commits affecting 2 directories:
+- /src/api/ (3 files changed)
+- /src/core/ (2 files changed)
+
+Proposed updates:
+
+1. /src/api/CLAUDE.md
+   Add section: "Rate Limiting"
+
+2. Root CLAUDE.md
+   Update section: "Architecture"
+
+Apply these updates? (yes/review/skip)
+```
+
+## Design Principles
+
+1. **Useful for agents** - Document what helps coding agents be effective
+2. **Parallel execution** - Spawn subagents concurrently for speed
+3. **Human approval** - User approves all changes in update mode
+4. **Preserve customizations** - Don't overwrite user edits
+5. **Cross-AI compatible** - AGENTS.md for Codex CLI
 
 ## License
 
-MIT License - see LICENSE file for details
+MIT License
 
 ## Author
 
 MK (mistakeknot@vibeguider.org)
-
-## Links
-
-- [GitHub Repository](https://github.com/mistakeknot/interdoc)
-- [Interagency Marketplace](https://github.com/mistakeknot/interagency-marketplace)
-- [Claude Code Documentation](https://docs.claude.com/claude-code)

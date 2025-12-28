@@ -1,7 +1,7 @@
 {
   "name": "interdoc",
-  "version": "2.1.0",
-  "description": "Automatic, ambient CLAUDE.md maintenance - detects changes at session start and during commits, proactively suggests documentation updates without manual invocation",
+  "version": "3.0.0",
+  "description": "Recursive CLAUDE.md generator using parallel subagents. Use /interdoc to generate or update project documentation.",
   "author": {
     "name": "MK",
     "email": "mistakeknot@vibeguider.org"

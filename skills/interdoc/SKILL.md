@@ -1,367 +1,341 @@
 ---
 name: interdoc
-description: Use when user requests CLAUDE.md updates or when documentation needs review after code changes. Analyzes git commits to suggest documentation updates for architecture, implementation details, dependencies, and conventions.
+description: Generate or update CLAUDE.md documentation using parallel subagents. Use /interdoc to invoke.
 ---
 
-# Interdoc: Automated CLAUDE.md Maintenance
+# Interdoc: Recursive Documentation Generator
 
 ## Purpose
 
-Keep CLAUDE.md documentation current by detecting significant code changes and suggesting relevant documentation updates. Reduces manual maintenance burden while keeping humans in control.
+Generate and maintain CLAUDE.md files across a project using parallel subagents. Each subagent documents a directory, and the root agent consolidates into coherent project documentation.
 
-## When to Use This Skill
+## When to Use
 
-**Automatic invocation** (primary mode - dual detection):
+**Manual invocation:**
+- `/interdoc` - Generate or update documentation for current project
 
-**SessionStart Hook** (lower threshold):
-- Checks when user starts/resumes a session
-- Triggers if 3+ commits since last CLAUDE.md update
-- Or if significant changes detected (new files, config changes)
-- Catches up on pending documentation at session start
+**Automatic triggers (via hooks):**
+- SessionStart: No CLAUDE.md exists, or 3+ commits since last update
+- PostToolUse: 10+ commits accumulated mid-session
 
-**PostToolUse Hook** (higher threshold):
-- Detects when Claude makes git commits during the session
-- Triggers after 10+ commits since last CLAUDE.md update
-- Catches large batches of work mid-session
-- Only triggers once until CLAUDE.md is updated (prevents spam)
+## Mode Detection
 
-**Both hooks**:
-- Inject prompts that automatically invoke this skill
-- User approves/rejects suggestions without manual invocation
-- Smart state tracking prevents duplicate triggers
+The skill automatically detects which mode to use:
 
-**Manual invocation** (optional):
-- User explicitly requests: "update CLAUDE.md", "review documentation", "document recent changes"
-- After feature completion or before creating PR
-- When user wants to review even if threshold not met
+- **No CLAUDE.md exists** → Generation mode (full recursive pass)
+- **CLAUDE.md exists** → Update mode (targeted pass on changed directories)
 
-## Core Workflow
+## Generation Mode Workflow
 
-### Step 1: Detect Baseline
+### Step 1: Analyze Project Structure
 
-Find when CLAUDE.md was last updated:
+Explore the project to identify directories that may warrant documentation:
 
 ```bash
-git log -1 --format=%ct CLAUDE.md
+# Find directories with source files
+find . -type f \( -name "*.ts" -o -name "*.js" -o -name "*.py" -o -name "*.go" -o -name "*.rs" -o -name "*.java" \) | xargs dirname | sort -u
+
+# Find package manifests
+find . -name "package.json" -o -name "Cargo.toml" -o -name "go.mod" -o -name "pyproject.toml" -o -name "requirements.txt"
 ```
 
-If CLAUDE.md doesn't exist, offer to create it (see Edge Cases below).
+Build a list of directories to document. Include:
+- Root directory (always)
+- Directories with package manifests
+- Directories with 5+ source files
+- Major structural directories (src/, lib/, packages/, apps/)
 
-### Step 2: Analyze Recent Commits
+### Step 2: Spawn Subagents
 
-Get all commits since the baseline:
+For each directory identified, spawn a subagent using the Task tool:
 
-```bash
-git log --since="@<timestamp>" --format="%H %s"
 ```
+Task tool with subagent_type="general-purpose":
 
-For each commit, examine:
-- Files changed (via `git show --stat <commit>`)
-- Nature of changes (via `git diff-tree --name-status <commit>`)
-- Commit message for context
+You are documenting the directory: {path}
 
-### Step 3: Categorize Changes
+Your job is to analyze the code and extract information useful for coding agents.
 
-Apply judgment to group changes into categories:
+**Explore the directory:**
+- Read source files to understand what they do
+- Check for README.md, package.json, or other metadata
+- Look at file structure and naming patterns
 
-**Architecture Changes** - Structural significance:
-- New directories created
-- Major reorganization (multiple files moved)
-- Changes to build/config files (tsconfig.json, Cargo.toml, etc.)
-- New file types introduced (signals tech stack change)
+**Extract and document:**
+1. Purpose - What does this directory/package do?
+2. Key files - What are the important files and their roles?
+3. Architecture - How do components connect? What's the data flow?
+4. Conventions - Naming patterns, code style, structural patterns
+5. Dependencies - What does this code depend on?
+6. Gotchas - Non-obvious behavior, known issues, TODOs worth noting
+7. Commands - Build, test, run commands if applicable
 
-**Implementation Details** - Important lessons:
-- Bug fixes with non-obvious solutions
-- Complex changes (>200 lines in single file)
-- New error handling patterns
-- Performance optimizations
-- Workarounds or gotchas
+**Decide if this directory warrants its own CLAUDE.md:**
+- YES if: 5+ source files, has package manifest, or contains significant complexity
+- NO if: Simple, few files, or just utilities
 
-**Dependencies** - External tools:
-- package.json, requirements.txt, Cargo.toml, go.mod changes
-- .claude-plugin/* modifications
-- New tools or libraries added
+**Return your response in this format:**
 
-**Conventions** - Repeated patterns:
-- Consistent changes across 3+ files
-- New naming patterns
-- File organization changes
-- Workflow additions
+DIRECTORY: {path}
+WARRANTS_CLAUDE_MD: true/false
+SUMMARY: [One paragraph summary for parent CLAUDE.md]
 
-**Skip if**:
-- Single file, <50 lines, markdown file (likely docs already)
-- Trivial changes (typos, formatting)
-- No new files/directories
+PATTERNS_DISCOVERED:
+- [Pattern 1]
+- [Pattern 2]
 
-### Step 4: Generate Suggestions
+CROSS_CUTTING_NOTES:
+- [Things that affect other parts of the codebase]
 
-For each category with significant changes, create a suggestion:
-
+CLAUDE_MD_CONTENT: (only if WARRANTS_CLAUDE_MD is true)
 ```markdown
-## [Category]: [Brief Description]
+# {Directory Name}
 
-**Triggered by commits**:
-- [hash] [commit message]
-- [hash] [commit message]
+## Purpose
+...
 
-**Proposed documentation**:
+## Key Files
+...
 
-[Context-appropriate text formatted to fit existing CLAUDE.md structure]
+## Architecture
+...
 
-**Why this matters**: [Explain significance]
+## Conventions
+...
+
+## Gotchas
+...
+```
 ```
 
-**Adaptive Structure**:
-- Read existing CLAUDE.md to understand structure
-- Match tone, style, and header hierarchy
-- Insert suggestions into appropriate existing sections
-- If no matching section exists, suggest where to add it
+**Spawn subagents in parallel** using multiple Task tool calls in a single message.
 
-### Step 5: Present for Review
+### Step 3: Collect and Consolidate
 
-Show user the suggestions:
+After all subagents complete, consolidate their outputs:
 
-```
-I've analyzed [N] commits since the last CLAUDE.md update ([X] days ago).
+**Deduplicate patterns:**
+- If multiple subagents report the same convention, include it once in root CLAUDE.md
+- Pick the clearest description
 
-Found [N] categories of changes:
+**Harmonize terminology:**
+- Ensure consistent naming (don't mix "API layer" and "backend services")
+- Use terminology from existing README if present
 
-1. **Architecture**: [brief summary]
-   - [commit 1]
-   - [commit 2]
+**Identify cross-cutting concerns:**
+- Shared types/interfaces used across directories
+- Common error handling patterns
+- Data flow between packages
+- Build/deploy pipeline that spans the project
 
-2. **Implementation Details**: [brief summary]
-   - [commit 3]
+### Step 4: Build Root CLAUDE.md
 
-Would you like to:
-- Review all suggestions individually
-- See full suggestions now
-- Skip for now
-```
+Create the root CLAUDE.md with this structure:
 
-If user wants to review:
-- Show each suggestion with full context
-- Ask: "Add this to CLAUDE.md? (yes/no/edit)"
-- Allow user to edit suggested text before applying
-
-### Step 6: Apply Updates
-
-For approved suggestions:
-- Read current CLAUDE.md
-- Insert updates in appropriate sections
-- Maintain existing structure and formatting
-- Write updated CLAUDE.md
-
-### Step 7: Cross-AI Compatibility
-
-After updating CLAUDE.md, ensure AGENTS.md exists for Codex CLI compatibility:
-
-**Check if AGENTS.md exists in the same directory as CLAUDE.md**:
-- If missing, create with redirect template
-- If exists, leave it alone (user may have customized)
-
-**AGENTS.md template**:
-```markdown
-# Agent Context
-
-For complete project documentation, read CLAUDE.md in this directory.
-
-This file exists for Codex CLI compatibility. All project guidance, architecture, conventions, and lessons learned are maintained in CLAUDE.md.
-```
-
-**For mono-repos**: Create AGENTS.md next to each CLAUDE.md file.
-
-### Step 8: Commit Documentation Update
-
-Create a commit documenting the update:
-
-```bash
-git add CLAUDE.md AGENTS.md
-git commit -m "Update CLAUDE.md with recent changes
-
-- [Category 1]: [brief description]
-- [Category 2]: [brief description]
-
-Documented commits: [hash]...[hash]
-"
-```
-
-Clear the pending queue: `rm .git/interdoc-pending` (if it exists)
-
-## Edge Cases
-
-### Missing CLAUDE.md
-
-If CLAUDE.md doesn't exist:
-
-```
-I detected significant changes but CLAUDE.md doesn't exist.
-
-Let me create one with a basic template:
-- Repository Purpose
-- Architecture
-- Current Status
-- Key Conventions
-
-You can customize after I create it.
-```
-
-**Template**:
 ```markdown
 # CLAUDE.md
 
-## Repository Purpose
+## Overview
 
-[Brief description of what this project does]
+[What this project does - synthesized from subagent summaries and any existing README]
 
 ## Architecture
 
-[High-level structure and key components]
+[How the pieces fit together - cross-cutting concerns, data flow]
 
-## Current Status
+## Directory Structure
 
-[What's implemented, what's in progress]
+[Map of key directories with one-line descriptions]
+- `/src/api/` - REST API layer (has own CLAUDE.md)
+- `/src/core/` - Business logic
+- `/packages/shared/` - Shared utilities (has own CLAUDE.md)
 
-## Key Conventions
+## Conventions
 
-[Naming patterns, file organization, workflows]
+[Project-wide patterns - deduplicated from subagents]
 
-## Lessons Learned
+## Development
 
-[Important implementation details and gotchas]
+[Build, test, run commands - consolidated from subagents]
+
+## Gotchas
+
+[Project-wide gotchas and known issues]
 ```
 
-After creating, apply the pending suggestions to the new file.
+### Step 5: Write Files
 
-### Mono-repos
+For each directory where a subagent indicated WARRANTS_CLAUDE_MD: true:
+1. Write the CLAUDE.md file
+2. Create AGENTS.md redirect:
 
-Detect mono-repo structure by checking for:
-- Multiple package.json files
-- Workspace configuration (pnpm-workspace.yaml, lerna.json, etc.)
-- packages/ or apps/ directories
+```markdown
+# Agent Context
 
-**Behavior**:
-```
-I detected this is a mono-repo.
+For complete documentation, read CLAUDE.md in this directory.
 
-Your recent commits affected:
-- packages/api/
-- packages/shared/
-
-I'll create CLAUDE.md files for each package:
-- packages/api/CLAUDE.md
-- packages/shared/CLAUDE.md
-- ./CLAUDE.md (root - overall architecture)
+This file exists for Codex CLI compatibility.
 ```
 
-**Update targeting**:
-- Suggestions target the CLAUDE.md closest to changed files
-- Root CLAUDE.md for architectural changes spanning packages
-- Package CLAUDE.md for package-specific implementation details
+Write root CLAUDE.md and AGENTS.md.
 
-**AGENTS.md for mono-repos**:
-- Create AGENTS.md next to each CLAUDE.md (root + packages)
-- All redirect to their respective CLAUDE.md in the same directory
+### Step 6: Commit
 
-### Merge Commits
+```bash
+git add -A "*.md"
+git commit -m "Generate CLAUDE.md documentation
 
-For merge commits:
-- Analyze the merge commit's combined diff
-- Don't separately analyze individual commits being merged
-- Flag large merges: "This merge includes [N] files - I'll focus on major patterns"
+Created documentation for:
+- [list directories with CLAUDE.md]
 
-### Large Refactors (>50 files)
-
-When changes are massive:
-- Group by directory/module
-- Focus on architectural patterns rather than file-by-file
-- Limit to top 3 most significant categories
-- Present as: "Large refactor detected - focusing on architectural changes"
-
-### No Significant Changes
-
-If analysis finds no significant changes:
-```
-I reviewed [N] commits since the last CLAUDE.md update.
-
-No significant changes detected - mostly [typos/formatting/minor updates].
-
-CLAUDE.md appears up-to-date.
+Generated by Interdoc"
 ```
 
-Clear pending queue if it exists.
+## Update Mode Workflow
 
-## Analyzing Change Significance
+### Step 1: Detect Changes
 
-When analyzing commits, prioritize changes that are:
+Find what changed since last CLAUDE.md update:
 
-**Highly significant**:
-- New directories created
-- 3+ files changed in related commits
-- Config files modified (package.json, tsconfig.json, .claude-plugin/*, Cargo.toml, etc.)
-- Files moved/renamed (refactoring)
-- New file type introduced (tech stack changes)
-
-**Less significant** (can skip or summarize):
-- Single file changed with < 50 lines
-- Markdown files (likely already documented)
-- Pure formatting or typo fixes
-
-Apply judgment - not every commit needs documentation, but architectural changes and important lessons learned should be captured.
-
-## Output Format
-
-**Summary view**:
-```
-📝 CLAUDE.md Update Suggestions
-
-Analyzed: [N] commits ([date] to [date])
-
-Categories:
-1. 🏗️  Architecture ([N] commits)
-   Brief summary of architectural changes
-
-2. 💡 Implementation Details ([N] commits)
-   Brief summary of lessons learned
-
-3. 📦 Dependencies ([N] commits)
-   Brief summary of dependency changes
-
-4. 📋 Conventions ([N] commits)
-   Brief summary of new patterns
+```bash
+CLAUDE_UPDATE_TIME=$(git log -1 --format=%ct CLAUDE.md)
+git diff --name-only "@$CLAUDE_UPDATE_TIME" HEAD
 ```
 
-**Detail view** (for each suggestion):
+Group changed files by directory.
+
+### Step 2: Spawn Targeted Subagents
+
+Only spawn subagents for directories with changes. Modify the prompt:
+
 ```
-## [Icon] [Category]: [Brief Description]
+You are updating documentation for: {path}
 
-**Commits**:
-- abc123: [message]
-- def456: [message]
+Recent changes in this directory:
+{list of changed files from git diff}
 
-**Proposed Documentation**:
+**Read the existing CLAUDE.md** (if present) to understand current documentation.
 
-[Full suggested text, formatted to match CLAUDE.md style]
+**Analyze the changes:**
+- What functionality was added/modified?
+- Do any documented patterns need updating?
+- Are there new gotchas or conventions?
 
-**Why this matters**:
-[2-3 sentences explaining significance]
+**Return your response in this format:**
 
----
-Add to CLAUDE.md? (yes/no/edit)
+DIRECTORY: {path}
+CHANGES_SUMMARY: [What changed]
+UPDATES_NEEDED: true/false
+
+PROPOSED_UPDATES: (if UPDATES_NEEDED is true)
+- Section: [section name]
+  Change: [add/modify/remove]
+  Content: [proposed content]
+
+STALE_CONTENT: (if any existing documentation is now incorrect)
+- [Description of what's stale]
+```
+
+### Step 3: Present for Approval
+
+Show the user what updates are proposed:
+
+```
+Found changes in 2 directories:
+
+1. /src/api/
+   - New authentication middleware added
+   - Proposed: Add "Authentication" section to CLAUDE.md
+
+2. /src/core/
+   - Validation logic refactored
+   - Proposed: Update "Architecture" section
+
+Would you like to:
+- Review all suggestions
+- Apply all
+- Skip for now
+```
+
+### Step 4: Apply Approved Updates
+
+For each approved update:
+1. Read existing CLAUDE.md
+2. Apply the modification (preserving other sections)
+3. Write updated file
+
+### Step 5: Commit
+
+```bash
+git add -A "*.md"
+git commit -m "Update CLAUDE.md documentation
+
+Updated:
+- [list of changes]
+
+Generated by Interdoc"
 ```
 
 ## Key Principles
 
-1. **Human control**: User approves all changes
-2. **Non-intrusive**: Don't interrupt rapid iteration
-3. **Context-aware**: Match existing CLAUDE.md style
-4. **Helpful defaults**: Create files, handle mono-repos automatically
-5. **Cross-AI compatible**: Maintain AGENTS.md redirects
-6. **Apply judgment**: Not all changes need documentation
+1. **Useful for agents** - Document what helps coding agents be effective
+2. **Parallel execution** - Spawn subagents concurrently for speed
+3. **Human approval** - User approves all changes in update mode
+4. **Preserve customizations** - Don't overwrite user edits in update mode
+5. **Cross-AI compatible** - Maintain AGENTS.md redirects for Codex CLI
 
-## Success Indicators
+## Example Session
 
-- User approves 50%+ of suggestions (good signal/noise ratio)
-- CLAUDE.md stays current within 1 week of major changes
-- Hook doesn't feel annoying
-- Both Claude Code and Codex CLI work seamlessly
+### Generation (new project)
+
+```
+User: /interdoc
+
+Claude: I'll generate CLAUDE.md documentation for this project.
+
+Analyzing project structure...
+Found 4 directories to document:
+- / (root)
+- /src/api/
+- /src/core/
+- /packages/shared/
+
+Spawning subagents to analyze each directory...
+
+[Subagents run in parallel]
+
+Consolidation complete. Created:
+- /CLAUDE.md (root documentation)
+- /src/api/CLAUDE.md
+- /packages/shared/CLAUDE.md
+- AGENTS.md redirects for each
+
+Committed: "Generate CLAUDE.md documentation"
+```
+
+### Update (existing project)
+
+```
+User: /interdoc
+
+Claude: CLAUDE.md exists. Checking for changes since last update...
+
+Found 5 commits affecting 2 directories:
+- /src/api/ (3 files changed)
+- /src/core/ (2 files changed)
+
+Analyzing changes...
+
+Proposed updates:
+
+1. /src/api/CLAUDE.md
+   Add section: "Rate Limiting"
+   - New rate limiting middleware in middleware/rateLimit.ts
+   - Configurable via RATE_LIMIT_* env vars
+
+2. Root CLAUDE.md
+   Update section: "Architecture"
+   - Add mention of rate limiting layer
+
+Apply these updates? (yes/review/skip)
+```
