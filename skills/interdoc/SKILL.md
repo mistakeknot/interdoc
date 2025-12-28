@@ -558,17 +558,209 @@ For update mode, create a consolidated "Recent Changes" section:
 
 # Key Principles
 
-1. **AGENTS.md only** - Only create/update AGENTS.md files, never CLAUDE.md
-2. **Incremental updates** - Append and modify, don't replace entire files
-3. **Actual diff preview** - Show real unified diffs, not just summaries
-4. **Individual review option** - Let users step through files one by one
-5. **Verify subagent writes** - Check git status after subagents complete
-6. **Preserve customizations** - Never remove user's manual additions
-7. **Parallel execution** - Spawn subagents concurrently for speed
-8. **Progress reporting** - Show subagent status during execution
-9. **Smart scoping** - Offer depth control for large monorepos
-10. **Git-aware** - Use diffs and commit messages for context
-11. **Cross-AI compatible** - AGENTS.md works with Claude Code, Codex CLI, and other AI tools
+1. **AGENTS.md as primary** - All documentation goes in AGENTS.md (cross-AI compatible)
+2. **CLAUDE.md harmonization** - Slim down CLAUDE.md to Claude-specific settings only
+3. **Incremental updates** - Append and modify, don't replace entire files
+4. **Actual diff preview** - Show real unified diffs, not just summaries
+5. **Individual review option** - Let users step through files one by one
+6. **Verify subagent writes** - Check git status after subagents complete
+7. **Preserve customizations** - Never remove user's manual additions
+8. **Parallel execution** - Spawn subagents concurrently for speed
+9. **Progress reporting** - Show subagent status during execution
+10. **Smart scoping** - Offer depth control for large monorepos
+11. **Git-aware** - Use diffs and commit messages for context
+12. **Cross-AI compatible** - AGENTS.md works with Claude Code, Codex CLI, and other AI tools
+
+---
+
+# CLAUDE.md Harmonization
+
+When Interdoc runs, it also checks for CLAUDE.md files and harmonizes them with AGENTS.md to reduce maintenance burden.
+
+## The Problem
+
+Many projects have both CLAUDE.md and AGENTS.md with duplicated content:
+- Architecture descriptions in both files
+- Coding conventions duplicated
+- File structure documented twice
+- Only Claude Code reads CLAUDE.md; other AI tools ignore it
+
+## The Solution
+
+Interdoc consolidates documentation into AGENTS.md and slims CLAUDE.md down to Claude-specific settings only.
+
+## Step 1: Detect CLAUDE.md Files
+
+```bash
+# Find all CLAUDE.md files
+find . -name "CLAUDE.md" -type f -not -path "*/node_modules/*"
+```
+
+## Step 2: Analyze CLAUDE.md Content
+
+For each CLAUDE.md, categorize content:
+
+**Claude-specific (keep in CLAUDE.md):**
+- Model preferences (`Prefer opus for complex tasks`)
+- Tool restrictions (`Don't use Bash for file operations`)
+- Approval settings (`Auto-approve tests`)
+- Claude Code settings references
+- Hooks configuration notes
+
+**General documentation (move to AGENTS.md):**
+- Project overview / architecture
+- Directory structure descriptions
+- Coding conventions and patterns
+- Build/test/run commands
+- File descriptions and purposes
+- Gotchas and known issues
+
+## Step 3: Generate Slim CLAUDE.md
+
+Replace verbose CLAUDE.md with a slim version:
+
+```markdown
+# CLAUDE.md
+
+> **Documentation is in AGENTS.md** - This file contains Claude-specific settings only.
+> For project documentation, architecture, and conventions, see [AGENTS.md](./AGENTS.md).
+
+## Claude-Specific Settings
+
+[Any Claude-specific content extracted from original CLAUDE.md]
+
+## Model Preferences
+
+[If any were specified]
+
+## Tool Settings
+
+[If any were specified]
+```
+
+## Step 4: Migrate Content to AGENTS.md
+
+Any general documentation found in CLAUDE.md gets merged into AGENTS.md:
+
+- If section exists in AGENTS.md → append unique content
+- If section doesn't exist → create new section
+- Deduplicate identical content
+- Preserve the more detailed version when both exist
+
+## Example Transformation
+
+**Before (CLAUDE.md - 150 lines):**
+```markdown
+# CLAUDE.md
+
+## Project Overview
+This is a simulation game with historical modeling...
+
+## Architecture
+The project uses a monorepo structure with packages/core for logic...
+
+## Conventions
+- Use TypeScript strict mode
+- Prefer functional components
+- Use pnpm for package management
+
+## Commands
+- pnpm dev - Start development server
+- pnpm test - Run tests
+- pnpm build - Build for production
+
+## Claude Settings
+- Prefer using Read tool over cat
+- Auto-approve test runs
+```
+
+**After (CLAUDE.md - 15 lines):**
+```markdown
+# CLAUDE.md
+
+> **Documentation is in AGENTS.md** - This file contains Claude-specific settings only.
+
+## Claude Settings
+
+- Prefer using Read tool over cat
+- Auto-approve test runs
+
+## See Also
+
+- [AGENTS.md](./AGENTS.md) - Project documentation, architecture, conventions
+```
+
+**AGENTS.md gains:**
+- Project Overview section (if not already present)
+- Architecture section (merged with existing)
+- Conventions section (deduplicated)
+- Commands section (if not already present)
+
+## Diff Preview for CLAUDE.md
+
+Show CLAUDE.md changes alongside AGENTS.md changes:
+
+```
+📁 /CLAUDE.md (slimmed)
+```diff
+-# CLAUDE.md
+-
+-## Project Overview
+-This is a simulation game with historical modeling...
+-[100 lines of documentation]
+-
+-## Claude Settings
+-- Prefer using Read tool over cat
++# CLAUDE.md
++
++> **Documentation is in AGENTS.md** - This file contains Claude-specific settings only.
++
++## Claude Settings
++
++- Prefer using Read tool over cat
++
++## See Also
++
++- [AGENTS.md](./AGENTS.md) - Project documentation
+```
+
+📁 /AGENTS.md (updated)
+```diff
+@@ -1,6 +1,20 @@
+ # AGENTS.md
+
+ ## Overview
++
++This is a simulation game with historical modeling...
++[migrated content]
+```
+```
+
+## User Approval
+
+Before modifying CLAUDE.md files, explicitly confirm:
+
+```
+Found 3 CLAUDE.md files with documentation that could move to AGENTS.md:
+
+1. /CLAUDE.md - 120 lines of docs, 5 lines Claude-specific
+2. /packages/core/CLAUDE.md - 80 lines of docs, 0 lines Claude-specific
+3. /packages/ui-web/CLAUDE.md - 45 lines of docs, 3 lines Claude-specific
+
+This will:
+- Move documentation content to corresponding AGENTS.md files
+- Slim CLAUDE.md to Claude-specific settings only
+- Add pointer to AGENTS.md in each CLAUDE.md
+
+Proceed? [Y]es / [N]o / [R]eview individually
+```
+
+## Skip Conditions
+
+Don't modify CLAUDE.md if:
+- It only contains Claude-specific settings (already slim)
+- It has `# DO NOT MODIFY` or similar markers
+- User opts out with `--no-claude-harmonize` or answers [N]
 
 ---
 

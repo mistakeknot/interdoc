@@ -10,6 +10,7 @@ Interdoc generates and maintains AGENTS.md documentation for your projects. It s
 
 - **Parallel subagents**: Spawns agents per directory for fast analysis
 - **Incremental updates**: Appends new content, preserves existing documentation
+- **CLAUDE.md harmonization**: Migrates docs from CLAUDE.md → AGENTS.md, slims CLAUDE.md to settings only
 - **Unified diff previews**: Shows actual diffs before applying (not just summaries)
 - **Individual file review**: Step through files one by one with [R]eview option
 - **Subagent verification**: Confirms files were created before committing
@@ -164,18 +165,40 @@ Claude: Applied 2 updates.
 Committed: "Update AGENTS.md documentation"
 ```
 
+## CLAUDE.md Harmonization
+
+If your project has both CLAUDE.md and AGENTS.md, Interdoc can consolidate them:
+
+1. **Analyzes CLAUDE.md** - Identifies documentation vs Claude-specific settings
+2. **Migrates documentation** - Moves project docs to AGENTS.md
+3. **Slims CLAUDE.md** - Leaves only Claude-specific settings (model prefs, tool restrictions)
+4. **Adds pointer** - CLAUDE.md now points to AGENTS.md for documentation
+
+**Before:**
+```
+CLAUDE.md (150 lines) - Mixed docs + settings
+AGENTS.md (200 lines) - Some overlap with CLAUDE.md
+```
+
+**After:**
+```
+CLAUDE.md (15 lines) - Claude settings only, points to AGENTS.md
+AGENTS.md (280 lines) - All documentation consolidated
+```
+
 ## Design Principles
 
-1. **AGENTS.md only** - Never creates CLAUDE.md (use AGENTS.md for cross-AI compatibility)
-2. **Incremental updates** - Append and modify, don't replace entire files
-3. **Actual diff preview** - Show real unified diffs, not just summaries
-4. **Individual review option** - Let users step through files one by one
-5. **Verify subagent writes** - Check git status after subagents complete
-6. **Preserve customizations** - Never remove user's manual additions
-7. **Parallel execution** - Spawn subagents concurrently for speed
-8. **Progress reporting** - Show subagent status during execution
-9. **Smart scoping** - Offer depth control for large monorepos
-10. **Git-aware** - Use diffs and commit messages for context
+1. **AGENTS.md as primary** - All documentation in AGENTS.md (cross-AI compatible)
+2. **CLAUDE.md harmonization** - Slim CLAUDE.md to Claude-specific settings only
+3. **Incremental updates** - Append and modify, don't replace entire files
+4. **Actual diff preview** - Show real unified diffs, not just summaries
+5. **Individual review option** - Let users step through files one by one
+6. **Verify subagent writes** - Check git status after subagents complete
+7. **Preserve customizations** - Never remove user's manual additions
+8. **Parallel execution** - Spawn subagents concurrently for speed
+9. **Progress reporting** - Show subagent status during execution
+10. **Smart scoping** - Offer depth control for large monorepos
+11. **Git-aware** - Use diffs and commit messages for context
 
 ## Directory Structure
 
