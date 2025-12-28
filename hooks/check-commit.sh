@@ -43,5 +43,5 @@ if [ "$COMMITS_SINCE" -ge 10 ]; then
     fi
     touch "$TRIGGER_MARKER"
 
-    echo "There are now $COMMITS_SINCE commits since CLAUDE.md was last updated. Use /interdoc to update documentation."
+    echo "There are now $COMMITS_SINCE commits since CLAUDE.md was last updated. Please update documentation using the Interdoc skill."
 fi

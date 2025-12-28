@@ -1,6 +1,6 @@
 ---
 name: interdoc
-description: Generate or update CLAUDE.md documentation using parallel subagents. Use /interdoc to invoke.
+description: Generate or update CLAUDE.md documentation using parallel subagents. Triggers automatically via hooks or when user asks to generate/update documentation.
 ---
 
 # Interdoc: Recursive Documentation Generator
@@ -12,7 +12,7 @@ Generate and maintain CLAUDE.md files across a project using parallel subagents.
 ## When to Use
 
 **Manual invocation:**
-- `/interdoc` - Generate or update documentation for current project
+- User asks: "generate documentation", "create CLAUDE.md", "document this project", "update CLAUDE.md"
 
 **Automatic triggers (via hooks):**
 - SessionStart: No CLAUDE.md exists, or 3+ commits since last update

@@ -8,7 +8,7 @@ fi
 
 # If no CLAUDE.md exists, suggest generating one
 if [ ! -f "CLAUDE.md" ]; then
-    echo "No CLAUDE.md found. Use /interdoc to generate documentation for this project."
+    echo "No CLAUDE.md found. Please generate documentation for this project using the Interdoc skill."
     exit 0
 fi
 
@@ -25,5 +25,5 @@ COMMITS_SINCE=$(git log --since="@$CLAUDE_UPDATE_TIME" --oneline 2>/dev/null | w
 
 # If there are 3+ commits, suggest updating
 if [ "$COMMITS_SINCE" -ge 3 ]; then
-    echo "There are $COMMITS_SINCE commits since CLAUDE.md was last updated. Use /interdoc to update documentation."
+    echo "There are $COMMITS_SINCE commits since CLAUDE.md was last updated. Please update documentation using the Interdoc skill."
 fi

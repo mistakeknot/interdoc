@@ -1,7 +1,7 @@
 {
   "name": "interdoc",
   "version": "3.0.0",
-  "description": "Recursive CLAUDE.md generator using parallel subagents. Use /interdoc to generate or update project documentation.",
+  "description": "Recursive CLAUDE.md generator using parallel subagents. Generates or updates project documentation automatically.",
   "author": {
     "name": "MK",
     "email": "mistakeknot@vibeguider.org"

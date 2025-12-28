@@ -34,12 +34,15 @@ cd interdoc
 
 ## Usage
 
-### Manual: `/interdoc`
+### Manual
 
-Run `/interdoc` to generate or update documentation:
+Ask Claude to generate or update documentation:
 
 ```
-/interdoc
+"generate documentation for this project"
+"create CLAUDE.md"
+"update CLAUDE.md"
+"document this codebase"
 ```
 
 The skill automatically detects which mode to use:
@@ -48,10 +51,10 @@ The skill automatically detects which mode to use:
 
 ### Automatic: Hooks
 
-Interdoc includes hooks that suggest running `/interdoc`:
+Interdoc includes hooks that prompt Claude to run the skill:
 
-- **SessionStart**: Suggests when no CLAUDE.md exists or 3+ commits since last update
-- **PostToolUse**: Suggests after 10+ commits accumulate mid-session
+- **SessionStart**: Triggers when no CLAUDE.md exists or 3+ commits since last update
+- **PostToolUse**: Triggers after 10+ commits accumulate mid-session
 
 ## How It Works
 
