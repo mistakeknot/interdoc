@@ -1,16 +1,24 @@
 # Interdoc
 
-**Recursive CLAUDE.md generator using parallel subagents**
+**Recursive AGENTS.md generator using parallel subagents**
 
-Interdoc generates and maintains CLAUDE.md documentation for your projects. It spawns parallel subagents to analyze each directory, then consolidates their findings into coherent documentation that helps coding agents understand your codebase.
+Interdoc generates and maintains AGENTS.md documentation for your projects. It spawns parallel subagents to analyze each directory, then consolidates their findings into coherent documentation that helps coding agents understand your codebase.
+
+**Why AGENTS.md?** Claude Code reads both AGENTS.md and CLAUDE.md, but AGENTS.md is the cross-AI standard that also works with Codex CLI and other AI coding tools. Using AGENTS.md as the primary format ensures maximum compatibility.
 
 ## Features
 
 - **Parallel subagents**: Spawns agents per directory for fast analysis
-- **Smart scoping**: Each subagent decides if its directory warrants a CLAUDE.md
-- **Consolidation**: Root agent deduplicates patterns and identifies cross-cutting concerns
-- **Two modes**: Generation (new projects) and Update (existing documentation)
-- **Cross-AI compatible**: Creates AGENTS.md redirects for Codex CLI
+- **Incremental updates**: Appends new content, preserves existing documentation
+- **Unified diff previews**: Shows actual diffs before applying (not just summaries)
+- **Individual file review**: Step through files one by one with [R]eview option
+- **Subagent verification**: Confirms files were created before committing
+- **Progress reporting**: Shows subagent status during execution
+- **Smart monorepo scoping**: Offers depth control for large projects (100+ files)
+- **Git-aware**: Uses commit messages and diffs for context in updates
+- **Consolidation**: Deduplicates patterns, identifies cross-cutting concerns
+- **Dry-run validation**: Validates structured output before applying
+- **Cross-AI compatible**: AGENTS.md works with Claude Code, Codex CLI, and other AI tools
 
 ## Installation
 
@@ -40,63 +48,141 @@ Ask Claude to generate or update documentation:
 
 ```
 "generate documentation for this project"
-"create CLAUDE.md"
-"update CLAUDE.md"
+"create AGENTS.md"
+"update AGENTS.md"
 "document this codebase"
 ```
 
 The skill automatically detects which mode to use:
-- **No CLAUDE.md exists** → Generation mode (full recursive pass)
-- **CLAUDE.md exists** → Update mode (analyze changes, update relevant sections)
+- **No AGENTS.md exists** → Generation mode (full recursive pass)
+- **AGENTS.md exists** → Update mode (incremental changes only)
 
 ### Automatic: Hooks
 
-Interdoc includes hooks that prompt Claude to run the skill:
+Interdoc includes hooks that suggest running the skill:
 
-- **SessionStart**: Triggers when no CLAUDE.md exists or 3+ commits since last update
-- **PostToolUse**: Triggers after 10+ commits accumulate mid-session
+- **SessionStart**: Triggers when no AGENTS.md exists, 7+ days since update, or 10+ commits
+- **PostToolUse**: Triggers after 15+ commits accumulate mid-session
 
 ## How It Works
 
 ### Generation Mode
 
 1. **Analyze structure** - Find directories with source files and package manifests
-2. **Spawn subagents** - One per directory, running in parallel
-3. **Each subagent**:
-   - Reads source files, READMEs, configs
-   - Extracts purpose, key files, patterns, conventions, gotchas
-   - Decides if directory warrants its own CLAUDE.md
-   - Returns structured output
-4. **Consolidate** - Deduplicate patterns, harmonize terminology, identify cross-cutting concerns
-5. **Write files** - Root CLAUDE.md + per-directory CLAUDE.md + AGENTS.md redirects
-6. **Commit** - All documentation committed to git
+2. **Scope selection** - For large projects, offer: top-level only, existing AGENTS.md, full recursive, or custom
+3. **Spawn subagents** - One per directory, running in parallel
+4. **Each subagent** returns structured output:
+   - Purpose, key files, architecture, conventions, gotchas
+   - Decision on whether directory warrants its own AGENTS.md
+5. **Consolidate** - Deduplicate patterns, create cross-references
+6. **Diff preview** - Show proposed files before writing
+7. **Write and commit** - After user approval
 
 ### Update Mode
 
-1. **Detect changes** - Find directories modified since last CLAUDE.md update
-2. **Spawn targeted subagents** - Only for changed directories
-3. **Analyze changes** - What's new, what's stale
-4. **Present for approval** - User reviews proposed updates
-5. **Apply and commit** - Update files, preserve existing content
+1. **Detect changes** - Git diff since last AGENTS.md update
+2. **Skip up-to-date** - Directories where AGENTS.md is newer than source changes
+3. **Spawn targeted subagents** - With git context (diffs, commit messages)
+4. **Incremental proposals** - ADDITIONS, MODIFICATIONS, DELETIONS (not full rewrites)
+5. **Diff preview** - Show exact changes in unified diff format
+6. **Apply approved updates** - Preserve existing content, append new sections
 
-## What Gets Documented
+## Example
 
-Subagents extract information useful for coding agents:
+### New Project
 
-- **Purpose** - What does this code do?
-- **Key files** - Important files and their roles
-- **Architecture** - How components connect, data flow
-- **Conventions** - Naming patterns, code style, structure
-- **Dependencies** - What the code relies on
-- **Gotchas** - Non-obvious behavior, known issues
-- **Commands** - Build, test, run
+```
+User: generate documentation for this project
+
+Claude: I'll generate AGENTS.md documentation for this project.
+
+Analyzing project structure...
+Found 127 source files across 12 directories.
+
+This is a large project. How would you like to scope?
+1. Top-level only - Document root and 4 package directories
+2. Full recursive - Analyze all 12 directories
+3. Custom - Specify directories
+
+User: 1
+
+Claude: Spawning 4 subagents...
+
+Proposed changes:
+
+📁 /AGENTS.md (new)
++# AGENTS.md
++## Overview
++[preview...]
+
+📁 /packages/core/AGENTS.md (new)
++# Core Package
++[preview...]
+
+Apply these changes? (yes/no/review)
+
+User: yes
+
+Claude: Created 3 AGENTS.md files.
+Committed: "Generate AGENTS.md documentation"
+```
+
+### Existing Project
+
+```
+User: update AGENTS.md
+
+Claude: AGENTS.md exists. Analyzing changes...
+
+Last updated: 5 days ago
+Commits since: 47
+Changed directories: 3
+
+Proposed updates:
+
+📁 /packages/ui-web/src/hooks/AGENTS.md
+```diff
+@@ -38,6 +38,12 @@
++## Simulation Event Hooks (December 2025)
++
++### useSectorShock
++Tracks supply chain disruption signals
+```
+
+📁 /packages/core/src/infrastructure/AGENTS.md
+```diff
+@@ -100,6 +100,8 @@
++### December 2025 - WorkerPool DI
++- Supports dependency injection for testing
+```
+
+Apply these updates? [A]pply all / [R]eview / [S]kip
+
+User: A
+
+Claude: Applied 2 updates.
+Committed: "Update AGENTS.md documentation"
+```
+
+## Design Principles
+
+1. **AGENTS.md only** - Never creates CLAUDE.md (use AGENTS.md for cross-AI compatibility)
+2. **Incremental updates** - Append and modify, don't replace entire files
+3. **Actual diff preview** - Show real unified diffs, not just summaries
+4. **Individual review option** - Let users step through files one by one
+5. **Verify subagent writes** - Check git status after subagents complete
+6. **Preserve customizations** - Never remove user's manual additions
+7. **Parallel execution** - Spawn subagents concurrently for speed
+8. **Progress reporting** - Show subagent status during execution
+9. **Smart scoping** - Offer depth control for large monorepos
+10. **Git-aware** - Use diffs and commit messages for context
 
 ## Directory Structure
 
 ```
 interdoc/
 ├── .claude-plugin/
-│   └── plugin.json         # Plugin metadata
+│   └── plugin.json         # Plugin metadata (version source of truth)
 ├── hooks/
 │   ├── hooks.json          # Hook configuration
 │   ├── check-updates.sh    # SessionStart hook
@@ -106,65 +192,6 @@ interdoc/
 │       └── SKILL.md        # Main skill definition
 └── README.md
 ```
-
-## Example
-
-### New Project
-
-```
-User: generate documentation for this project
-
-Claude: I'll generate CLAUDE.md documentation for this project.
-
-Analyzing project structure...
-Found 4 directories to document:
-- / (root)
-- /src/api/
-- /src/core/
-- /packages/shared/
-
-Spawning subagents to analyze each directory...
-
-[Subagents run in parallel]
-
-Consolidation complete. Created:
-- /CLAUDE.md (root documentation)
-- /src/api/CLAUDE.md
-- /packages/shared/CLAUDE.md
-- AGENTS.md redirects for each
-
-Committed: "Generate CLAUDE.md documentation"
-```
-
-### Existing Project
-
-```
-User: update CLAUDE.md
-
-Claude: CLAUDE.md exists. Checking for changes...
-
-Found 5 commits affecting 2 directories:
-- /src/api/ (3 files changed)
-- /src/core/ (2 files changed)
-
-Proposed updates:
-
-1. /src/api/CLAUDE.md
-   Add section: "Rate Limiting"
-
-2. Root CLAUDE.md
-   Update section: "Architecture"
-
-Apply these updates? (yes/review/skip)
-```
-
-## Design Principles
-
-1. **Useful for agents** - Document what helps coding agents be effective
-2. **Parallel execution** - Spawn subagents concurrently for speed
-3. **Human approval** - User approves all changes in update mode
-4. **Preserve customizations** - Don't overwrite user edits
-5. **Cross-AI compatible** - AGENTS.md for Codex CLI
 
 ## License
 

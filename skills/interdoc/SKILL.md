@@ -1,33 +1,37 @@
 ---
 name: interdoc
-description: Generate or update CLAUDE.md documentation using parallel subagents. Triggers automatically via hooks or when user asks to generate/update documentation.
+description: Generate or update AGENTS.md documentation using parallel subagents. Triggers automatically via hooks or when user asks to generate/update documentation.
 ---
 
 # Interdoc: Recursive Documentation Generator
 
 ## Purpose
 
-Generate and maintain CLAUDE.md files across a project using parallel subagents. Each subagent documents a directory, and the root agent consolidates into coherent project documentation.
+Generate and maintain AGENTS.md files across a project using parallel subagents. Each subagent documents a directory, and the root agent consolidates into coherent project documentation.
+
+**Why AGENTS.md?** Claude Code reads both AGENTS.md and CLAUDE.md, but AGENTS.md is the cross-AI standard that also works with Codex CLI and other AI coding tools. Using AGENTS.md as the primary format ensures maximum compatibility.
 
 ## When to Use
 
 **Manual invocation:**
-- User asks: "generate documentation", "create CLAUDE.md", "document this project", "update CLAUDE.md"
+- User asks: "generate documentation", "create AGENTS.md", "document this project", "update AGENTS.md"
 
 **Automatic triggers (via hooks):**
-- SessionStart: No CLAUDE.md exists, or 3+ commits since last update
-- PostToolUse: 10+ commits accumulated mid-session
+- SessionStart: No AGENTS.md exists, or 7+ days since last update, or 10+ commits since last update
+- PostToolUse: 15+ commits accumulated mid-session
 
 ## Mode Detection
 
 The skill automatically detects which mode to use:
 
-- **No CLAUDE.md exists** → Generation mode (full recursive pass)
-- **CLAUDE.md exists** → Update mode (targeted pass on changed directories)
+- **No AGENTS.md exists** → Generation mode (full recursive pass)
+- **AGENTS.md exists** → Update mode (targeted pass on changed directories)
 
-## Generation Mode Workflow
+---
 
-### Step 1: Analyze Project Structure
+# Generation Mode Workflow
+
+## Step 1: Analyze Project Structure
 
 Explore the project to identify directories that may warrant documentation:
 
@@ -37,21 +41,53 @@ find . -type f \( -name "*.ts" -o -name "*.js" -o -name "*.py" -o -name "*.go" -
 
 # Find package manifests
 find . -name "package.json" -o -name "Cargo.toml" -o -name "go.mod" -o -name "pyproject.toml" -o -name "requirements.txt"
+
+# Find existing AGENTS.md files (prioritize these for updates)
+find . -name "AGENTS.md" -type f
 ```
 
 Build a list of directories to document. Include:
 - Root directory (always)
 - Directories with package manifests
+- Directories with existing AGENTS.md files (high priority)
 - Directories with 5+ source files
 - Major structural directories (src/, lib/, packages/, apps/)
 
-### Step 2: Spawn Subagents
+### Scoping for Large Monorepos
 
-For each directory identified, spawn a subagent using the Task tool:
+For projects with 100+ files or deep nesting, offer the user a choice:
 
 ```
-Task tool with subagent_type="general-purpose":
+This is a large project. How would you like to scope the documentation?
 
+1. Top-level only - Document root and immediate package directories
+2. Existing AGENTS.md - Only update directories that already have AGENTS.md
+3. Full recursive - Analyze all directories (may spawn many subagents)
+4. Custom - Specify directories to include/exclude
+```
+
+## Step 2: Spawn Subagents
+
+For each directory identified, spawn a subagent using the Task tool.
+
+**Spawn subagents in parallel** using multiple Task tool calls in a single message.
+
+**Progress tracking:** After spawning, report progress to the user:
+```
+Spawning 6 subagents...
+- packages/ui-web/src/components (14 subdirs)
+- packages/api/src (3 subdirs)
+- src-tauri/src (8 subdirs)
+- scripts (16 subdirs)
+- packages/debug-tools
+- packages/shadow-work-mcp
+
+⏳ Waiting for subagents to complete...
+```
+
+### Subagent Prompt Template (Generation Mode)
+
+```
 You are documenting the directory: {path}
 
 Your job is to analyze the code and extract information useful for coding agents.
@@ -70,53 +106,92 @@ Your job is to analyze the code and extract information useful for coding agents
 6. Gotchas - Non-obvious behavior, known issues, TODOs worth noting
 7. Commands - Build, test, run commands if applicable
 
-**Decide if this directory warrants its own CLAUDE.md:**
+**Decide if this directory warrants its own AGENTS.md:**
 - YES if: 5+ source files, has package manifest, or contains significant complexity
 - NO if: Simple, few files, or just utilities
 
-**Return your response in this format:**
+**Return your response in this STRUCTURED format:**
 
 DIRECTORY: {path}
-WARRANTS_CLAUDE_MD: true/false
-SUMMARY: [One paragraph summary for parent CLAUDE.md]
+WARRANTS_AGENTS_MD: true/false
+SUMMARY: [One paragraph summary for parent AGENTS.md]
 
 PATTERNS_DISCOVERED:
-- [Pattern 1]
-- [Pattern 2]
+- pattern: [Pattern name]
+  description: [What it is]
+  examples: [File or code examples]
 
 CROSS_CUTTING_NOTES:
 - [Things that affect other parts of the codebase]
 
-CLAUDE_MD_CONTENT: (only if WARRANTS_CLAUDE_MD is true)
-```markdown
-# {Directory Name}
+AGENTS_MD_SECTIONS: (only if WARRANTS_AGENTS_MD is true)
+- section: "Purpose"
+  content: |
+    [Content for this section]
 
-## Purpose
-...
+- section: "Key Files"
+  content: |
+    [Content for this section]
 
-## Key Files
-...
+- section: "Architecture"
+  content: |
+    [Content for this section]
 
-## Architecture
-...
+- section: "Conventions"
+  content: |
+    [Content for this section]
 
-## Conventions
-...
-
-## Gotchas
-...
+- section: "Gotchas"
+  content: |
+    [Content for this section]
 ```
+
+## Step 3: Verify Subagent Results
+
+After all subagents complete, verify their work before consolidation:
+
+```bash
+# Check which files were actually created/modified
+git status --short | grep AGENTS.md
 ```
 
-**Spawn subagents in parallel** using multiple Task tool calls in a single message.
+**Verification checklist:**
+- Count new files (lines starting with `??`)
+- Count modified files (lines starting with `M`)
+- Compare against expected counts from subagent reports
+- If discrepancy, investigate which subagent failed to write
 
-### Step 3: Collect and Consolidate
+**Report to user:**
+```
+✅ Subagents complete (6/6)
 
-After all subagents complete, consolidate their outputs:
+Verification:
+- Expected: 20 new, 15 updated
+- Actual: 20 new, 15 updated ✓
+
+Proceeding to consolidation...
+```
+
+If verification fails:
+```
+⚠️ Subagent verification failed
+
+Expected 20 new files, found 18.
+Missing:
+- packages/api/src/routes/AGENTS.md
+- src-tauri/src/economy/data/AGENTS.md
+
+[R]etry failed subagents / [C]ontinue anyway / [A]bort
+```
+
+## Step 4: Collect and Consolidate
+
+After verification, consolidate subagent outputs:
 
 **Deduplicate patterns:**
-- If multiple subagents report the same convention, include it once in root CLAUDE.md
+- If multiple subagents report the same convention, include it once in root AGENTS.md
 - Pick the clearest description
+- Note which directories share the pattern
 
 **Harmonize terminology:**
 - Ensure consistent naming (don't mix "API layer" and "backend services")
@@ -128,12 +203,16 @@ After all subagents complete, consolidate their outputs:
 - Data flow between packages
 - Build/deploy pipeline that spans the project
 
-### Step 4: Build Root CLAUDE.md
+**Create cross-references:**
+- Link related updates (e.g., "core infrastructure change enables new UI hooks")
+- Note dependencies between documented directories
 
-Create the root CLAUDE.md with this structure:
+## Step 5: Build Root AGENTS.md
+
+Create the root AGENTS.md with this structure:
 
 ```markdown
-# CLAUDE.md
+# AGENTS.md
 
 ## Overview
 
@@ -146,9 +225,9 @@ Create the root CLAUDE.md with this structure:
 ## Directory Structure
 
 [Map of key directories with one-line descriptions]
-- `/src/api/` - REST API layer (has own CLAUDE.md)
+- `/src/api/` - REST API layer (has own AGENTS.md)
 - `/src/core/` - Business logic
-- `/packages/shared/` - Shared utilities (has own CLAUDE.md)
+- `/packages/shared/` - Shared utilities (has own AGENTS.md)
 
 ## Conventions
 
@@ -163,179 +242,463 @@ Create the root CLAUDE.md with this structure:
 [Project-wide gotchas and known issues]
 ```
 
-### Step 5: Write Files
+## Step 6: Diff Preview with Individual Review Option
 
-For each directory where a subagent indicated WARRANTS_CLAUDE_MD: true:
-1. Write the CLAUDE.md file
-2. Create AGENTS.md redirect:
+Before writing any files, show the user **actual unified diffs** (not just summaries):
 
-```markdown
-# Agent Context
-
-For complete documentation, read CLAUDE.md in this directory.
-
-This file exists for Codex CLI compatibility.
+**For new files**, show first 20 lines:
+```
+📁 /src/api/AGENTS.md (new file, 45 lines)
+```diff
++# API Layer
++
++## Purpose
++REST API endpoints for the simulation game.
++
++## Key Files
++| File | Purpose |
++|------|---------|
++| server.ts | Express app setup |
++| routes/*.ts | Route handlers |
++
++## Architecture
++- Express middleware stack
++- Route mounting under /api/
++...
+```
+[truncated, 25 more lines]
 ```
 
-Write root CLAUDE.md and AGENTS.md.
+**For updated files**, show actual unified diff:
+```
+📁 /packages/ui-web/AGENTS.md (modified)
+```diff
+@@ -17,6 +17,12 @@
+ ## Data & Utilities
 
-### Step 6: Commit
+ - `src/data` centralizes country mappings...
++- The single source of truth for country mappings is now `data/country-shadow-map.json`
++
++## Tauri Integration
++
++- Tauri services under `src/services/tauri/` handle Rust/TypeScript bridging
++- Use `deltaClient.ts` as the single source of truth for simulation state
+```
+```
+
+**Approval options:**
+```
+Apply these changes?
+  [A] Apply all (17 new, 27 updated)
+  [R] Review individually (step through each file)
+  [S] Skip for now
+  [E] Edit suggestions (modify before applying)
+```
+
+**If user selects [R] Review individually:**
+```
+📁 /src/api/AGENTS.md (new file)
+[shows full diff]
+
+Apply this file? [y]es / [n]o / [e]dit / [q]uit review
+```
+
+## Step 7: Write Files
+
+After user approval, for each directory where a subagent indicated WARRANTS_AGENTS_MD: true:
+1. Write the AGENTS.md file
+
+Write root AGENTS.md.
+
+## Step 8: Commit
 
 ```bash
 git add -A "*.md"
-git commit -m "Generate CLAUDE.md documentation
+git commit -m "Generate AGENTS.md documentation
 
 Created documentation for:
-- [list directories with CLAUDE.md]
+- [list directories with AGENTS.md]
 
 Generated by Interdoc"
 ```
 
-## Update Mode Workflow
+---
 
-### Step 1: Detect Changes
+# Update Mode Workflow
 
-Find what changed since last CLAUDE.md update:
+## Step 1: Detect Changes
+
+Find what changed since last AGENTS.md update:
 
 ```bash
-CLAUDE_UPDATE_TIME=$(git log -1 --format=%ct CLAUDE.md)
-git diff --name-only "@$CLAUDE_UPDATE_TIME" HEAD
+# Get the commit hash when AGENTS.md was last modified
+AGENTS_UPDATE_COMMIT=$(git log -1 --format=%H AGENTS.md)
+
+# Get the timestamp
+AGENTS_UPDATE_TIME=$(git log -1 --format=%ct AGENTS.md)
+
+# Calculate days since update
+CURRENT_TIME=$(date +%s)
+DAYS_SINCE=$(( (CURRENT_TIME - AGENTS_UPDATE_TIME) / 86400 ))
+
+# Get changed files since last update
+git diff --name-only "$AGENTS_UPDATE_COMMIT" HEAD
+
+# Count commits since update
+COMMITS_SINCE=$(git rev-list --count "$AGENTS_UPDATE_COMMIT"..HEAD)
 ```
 
 Group changed files by directory.
 
-### Step 2: Spawn Targeted Subagents
+### Skip Up-to-Date Directories
 
-Only spawn subagents for directories with changes. Modify the prompt:
+For each directory with an AGENTS.md:
+```bash
+# Check if directory's AGENTS.md is newer than source changes
+DIR_AGENTS_TIME=$(git log -1 --format=%ct "$DIR/AGENTS.md")
+LATEST_SOURCE_TIME=$(git log -1 --format=%ct -- "$DIR/*.ts" "$DIR/*.js" "$DIR/*.py")
+
+if [ "$DIR_AGENTS_TIME" -gt "$LATEST_SOURCE_TIME" ]; then
+    # Skip - AGENTS.md is up to date
+fi
+```
+
+## Step 2: Spawn Targeted Subagents
+
+Only spawn subagents for directories with changes. Use the enhanced prompt with git context:
+
+### Subagent Prompt Template (Update Mode)
 
 ```
 You are updating documentation for: {path}
 
-Recent changes in this directory:
-{list of changed files from git diff}
+## Git Context
 
-**Read the existing CLAUDE.md** (if present) to understand current documentation.
+**Commits since last AGENTS.md update:** {commit_count}
+**Days since last update:** {days_since}
 
-**Analyze the changes:**
-- What functionality was added/modified?
-- Do any documented patterns need updating?
-- Are there new gotchas or conventions?
+**Changed files:**
+{list of changed files}
 
-**Return your response in this format:**
+**Recent commit messages:**
+{recent commit messages, most recent first}
+
+**File diffs (summary):**
+{abbreviated diffs showing what changed - additions/deletions/modifications}
+
+## Current AGENTS.md Content
+
+{existing AGENTS.md content if present}
+
+## Your Task
+
+Analyze the changes and propose INCREMENTAL updates. Do NOT rewrite the entire file.
+
+**Return your response in this STRUCTURED format:**
 
 DIRECTORY: {path}
-CHANGES_SUMMARY: [What changed]
+CHANGES_SUMMARY: [Brief description of what changed]
 UPDATES_NEEDED: true/false
 
-PROPOSED_UPDATES: (if UPDATES_NEEDED is true)
-- Section: [section name]
-  Change: [add/modify/remove]
-  Content: [proposed content]
+ADDITIONS: (new sections or items to add)
+- section: "Recent Updates (Month Year)"
+  position: "after:Gotchas"  # or "before:X" or "end"
+  content: |
+    ### New Feature Name
+    - Description of what was added
+    - Usage example if applicable
 
-STALE_CONTENT: (if any existing documentation is now incorrect)
-- [Description of what's stale]
+- section: "Key Files"
+  action: "append"
+  items:
+    - "newFile.ts - Description of what it does"
+    - "anotherNew.ts - Description"
+
+MODIFICATIONS: (changes to existing sections)
+- section: "Architecture"
+  action: "update"
+  find: "Old description text"
+  replace: "Updated description text"
+
+- section: "File Organization"
+  action: "append_to_list"
+  items:
+    - "newHook.ts"
+    - "newComponent.ts"
+
+DELETIONS: (only if something was removed from codebase)
+- section: "Deprecated Features"
+  reason: "Feature X was removed in commit abc123"
+
+STALE_CONTENT: (existing documentation that is now incorrect)
+- section: "Architecture"
+  issue: "Still references old pattern X, but code now uses Y"
+  suggestion: "Update to reflect new pattern"
 ```
 
-### Step 3: Present for Approval
+## Step 3: Present for Approval with Diff Preview
 
-Show the user what updates are proposed:
+Show the user what updates are proposed in diff format:
 
 ```
 Found changes in 2 directories:
 
-1. /src/api/
-   - New authentication middleware added
-   - Proposed: Add "Authentication" section to CLAUDE.md
+📁 /src/api/AGENTS.md
+```diff
+@@ -45,6 +45,18 @@
+ ## Gotchas
+ - Rate limiting applies to all endpoints
 
-2. /src/core/
-   - Validation logic refactored
-   - Proposed: Update "Architecture" section
-
-Would you like to:
-- Review all suggestions
-- Apply all
-- Skip for now
++## Recent Updates (December 2025)
++
++### Authentication Middleware
++- New JWT validation in middleware/auth.ts
++- Configurable via AUTH_* env vars
++
++### Rate Limiting
++- Added rate limiting middleware
++- Configurable via RATE_LIMIT_* env vars
 ```
 
-### Step 4: Apply Approved Updates
+📁 /AGENTS.md (root)
+```diff
+@@ -12,6 +12,7 @@
+ ## Architecture
+
+ - API layer handles HTTP requests
++- Authentication middleware validates JWTs before route handlers
+ - Core business logic in /src/core
+```
+
+Apply these updates?
+- [A] Apply all
+- [R] Review individually
+- [S] Skip for now
+- [E] Edit suggestions
+```
+
+## Step 4: Apply Approved Updates
 
 For each approved update:
-1. Read existing CLAUDE.md
-2. Apply the modification (preserving other sections)
-3. Write updated file
+1. Read existing AGENTS.md
+2. Apply ONLY the specified modifications (preserve other sections)
+3. Validate the result is valid markdown
+4. Write updated file
 
-### Step 5: Commit
+**Preservation rules:**
+- Never remove sections unless explicitly in DELETIONS
+- Append new content rather than replacing when possible
+- Keep user's custom formatting and additions
+- Add "Last Updated: YYYY-MM-DD" at the bottom
+
+## Step 5: Commit
 
 ```bash
 git add -A "*.md"
-git commit -m "Update CLAUDE.md documentation
+git commit -m "Update AGENTS.md documentation
 
 Updated:
-- [list of changes]
+- [list of changes by directory]
 
 Generated by Interdoc"
 ```
 
-## Key Principles
+---
 
-1. **Useful for agents** - Document what helps coding agents be effective
-2. **Parallel execution** - Spawn subagents concurrently for speed
-3. **Human approval** - User approves all changes in update mode
-4. **Preserve customizations** - Don't overwrite user edits in update mode
-5. **Cross-AI compatible** - Maintain AGENTS.md redirects for Codex CLI
+# Consolidation Pass
 
-## Example Session
+After collecting all subagent outputs, the root agent performs consolidation:
 
-### Generation (new project)
+## Deduplication
 
 ```
-User: /interdoc
+Patterns found across multiple directories:
+- "TypeScript strict mode" mentioned in: /src/api, /src/core, /packages/shared
+  → Move to root AGENTS.md "Conventions" section
+  → Remove from individual AGENTS.md files
 
-Claude: I'll generate CLAUDE.md documentation for this project.
+- "Jest for testing" mentioned in: /src/api, /src/core
+  → Keep in root, reference from subdirectories
+```
+
+## Cross-Reference Generation
+
+```
+Related updates detected:
+- /packages/core/infrastructure added "WorkerPool DI pattern"
+- /packages/ui-web/hooks added "useSectorShock hook"
+- These are related: UI hook uses the core infrastructure
+
+→ Add to root AGENTS.md:
+  "The useSectorShock hook (ui-web) leverages the WorkerPool DI pattern (core/infrastructure)"
+```
+
+## Recent Changes Summary
+
+For update mode, create a consolidated "Recent Changes" section:
+
+```markdown
+## Recent Changes (December 2025)
+
+### Core Infrastructure
+- WorkerPool now supports dependency injection for testing
+- Task submission has typed request overloads
+
+### UI Hooks
+- New simulation event hooks: useSectorShock, useSimulationEvent
+- Hooks auto-unwrap Serde enum payloads
+
+### Scripts
+- Issue data maintenance scripts for pillar normalization
+- Agent priors generation from World Bank indicators
+- COMTRADE phase 12 fetcher for strategic commodities
+```
+
+---
+
+# Key Principles
+
+1. **AGENTS.md only** - Only create/update AGENTS.md files, never CLAUDE.md
+2. **Incremental updates** - Append and modify, don't replace entire files
+3. **Actual diff preview** - Show real unified diffs, not just summaries
+4. **Individual review option** - Let users step through files one by one
+5. **Verify subagent writes** - Check git status after subagents complete
+6. **Preserve customizations** - Never remove user's manual additions
+7. **Parallel execution** - Spawn subagents concurrently for speed
+8. **Progress reporting** - Show subagent status during execution
+9. **Smart scoping** - Offer depth control for large monorepos
+10. **Git-aware** - Use diffs and commit messages for context
+11. **Cross-AI compatible** - AGENTS.md works with Claude Code, Codex CLI, and other AI tools
+
+---
+
+# Dry-Run Validation
+
+Before applying subagent outputs, validate the structured format:
+
+**Parse validation:**
+```
+Validating subagent output for /packages/api/src...
+✓ DIRECTORY field present
+✓ WARRANTS_AGENTS_MD is boolean
+✓ AGENTS_MD_SECTIONS has valid structure
+✓ All section names are strings
+✓ All content fields are non-empty
+```
+
+**Content validation:**
+- Section names should be title case
+- Content should be valid markdown
+- File references should exist in the directory
+- No duplicate section names
+
+**On validation failure:**
+```
+⚠️ Validation failed for /packages/api/src
+
+Issues:
+- AGENTS_MD_SECTIONS[2].content is empty
+- Section "key files" should be "Key Files" (title case)
+
+[F]ix automatically / [S]kip this file / [A]bort
+```
+
+---
+
+# Example Sessions
+
+## Generation (new project)
+
+```
+User: generate documentation for this project
+
+Claude: I'll generate AGENTS.md documentation for this project.
 
 Analyzing project structure...
-Found 4 directories to document:
-- / (root)
-- /src/api/
-- /src/core/
-- /packages/shared/
+Found 127 source files across 12 directories.
 
-Spawning subagents to analyze each directory...
+This is a large project. How would you like to scope the documentation?
+1. Top-level only - Document root and 4 package directories
+2. Full recursive - Analyze all 12 directories
+3. Custom - Specify directories
 
-[Subagents run in parallel]
+User: 1
 
-Consolidation complete. Created:
-- /CLAUDE.md (root documentation)
-- /src/api/CLAUDE.md
-- /packages/shared/CLAUDE.md
-- AGENTS.md redirects for each
+Claude: Spawning 4 subagents for top-level packages...
 
-Committed: "Generate CLAUDE.md documentation"
+[Subagents complete]
+
+Consolidation complete. Proposed changes:
+
+📁 /AGENTS.md (new)
++# AGENTS.md
++## Overview
++A simulation game with historical modeling...
+[preview]
+
+📁 /packages/core/AGENTS.md (new)
++# Core Package
++## Purpose
++Game engine and domain logic...
+[preview]
+
+📁 /packages/ui-web/AGENTS.md (new)
++# UI Package
+[preview]
+
+Apply these changes? (yes/no/review)
+
+User: yes
+
+Claude: Created 3 AGENTS.md files.
+Committed: "Generate AGENTS.md documentation"
 ```
 
-### Update (existing project)
+## Update (existing project)
 
 ```
-User: /interdoc
+User: update AGENTS.md
 
-Claude: CLAUDE.md exists. Checking for changes since last update...
+Claude: AGENTS.md exists. Analyzing changes...
 
-Found 5 commits affecting 2 directories:
-- /src/api/ (3 files changed)
-- /src/core/ (2 files changed)
+Last updated: 5 days ago (December 23, 2025)
+Commits since: 47
+Changed directories: 3
 
-Analyzing changes...
+Spawning targeted subagents for:
+- /packages/ui-web/src/hooks (8 files changed)
+- /packages/core/src/infrastructure (4 files changed)
+- /scripts (12 files changed)
+
+[Subagents complete]
 
 Proposed updates:
 
-1. /src/api/CLAUDE.md
-   Add section: "Rate Limiting"
-   - New rate limiting middleware in middleware/rateLimit.ts
-   - Configurable via RATE_LIMIT_* env vars
+📁 /packages/ui-web/src/hooks/AGENTS.md
+```diff
+@@ -38,6 +38,15 @@
+ └── useSimulationEvent.ts   # Generic event subscription
++
++## Simulation Event Hooks (December 2025)
++
++### useSectorShock
++Tracks supply chain disruption signals:
++- shock: Current SectorShockWire | null
++- impactByCommodityId: Map<string, number>
+```
 
-2. Root CLAUDE.md
-   Update section: "Architecture"
-   - Add mention of rate limiting layer
+📁 /packages/core/src/infrastructure/AGENTS.md
+```diff
+@@ -100,6 +100,20 @@
++### December 2025 - WorkerPool Dependency Injection
++- WorkerPool now supports DI for testing
++- Task submission has typed request overloads
+```
 
-Apply these updates? (yes/review/skip)
+Apply these updates? [A]pply all / [R]eview / [S]kip
+
+User: A
+
+Claude: Applied 2 updates.
+Committed: "Update AGENTS.md documentation"
 ```

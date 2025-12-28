@@ -4,7 +4,9 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ## Project Overview
 
-**Interdoc** is a Claude Code plugin that generates and maintains CLAUDE.md documentation using parallel subagents. It analyzes project structure, spawns agents per directory, and consolidates into coherent documentation.
+**Interdoc** is a Claude Code plugin that generates and maintains AGENTS.md documentation using parallel subagents. It analyzes project structure, spawns agents per directory, and consolidates into coherent documentation.
+
+**Why AGENTS.md?** Claude Code reads both AGENTS.md and CLAUDE.md, but AGENTS.md is the cross-AI standard that also works with Codex CLI and other AI coding tools.
 
 **Plugin Type:** Claude Code skill plugin
 **Plugin Namespace:** `interdoc` (from interagency-marketplace)
@@ -32,7 +34,7 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 | Skill | Trigger | Use Case |
 |-------|---------|----------|
-| `interdoc` | Natural language or hooks | Generate/update CLAUDE.md documentation |
+| `interdoc` | Natural language or hooks | Generate/update AGENTS.md documentation |
 
 > **Note:** This is a Claude Code plugin skill, invoked via natural language (e.g., "generate documentation for this project"). It is NOT a slash command.
 
@@ -66,18 +68,21 @@ git push
 
 ## Update the Marketplace (CRITICAL)
 
-The plugin is distributed via `interagency-marketplace`. After pushing version changes here, you **must also update the marketplace**:
+The plugin is distributed via `interagency-marketplace`. After pushing version changes to interdoc, you **must also update the marketplace**.
 
-```bash
-# 1. Update marketplace manifest with new version
-cd ~/interagency-marketplace
-# Edit .claude-plugin/marketplace.json - update interdoc version and description
+**Claude: After pushing changes to interdoc, ALWAYS update ~/interagency-marketplace:**
 
-# 2. Commit and push marketplace
-git add .
-git commit -m "chore: bump interdoc to X.Y.Z"
-git push
-```
+1. Edit `~/interagency-marketplace/.claude-plugin/marketplace.json`
+2. Find the `interdoc` entry and update:
+   - `version` to match `.claude-plugin/plugin.json`
+   - `description` if the plugin's purpose changed
+3. Commit and push:
+   ```bash
+   cd ~/interagency-marketplace
+   git add .claude-plugin/marketplace.json
+   git commit -m "chore: bump interdoc to X.Y.Z"
+   git push
+   ```
 
 ### Refresh Local Cache
 
@@ -87,8 +92,6 @@ After pushing both repos:
 claude plugin marketplace update interagency-marketplace
 claude plugin update interdoc@interagency-marketplace
 ```
-
-**Claude: When bumping the version, remind the user to also update the marketplace repo, or offer to do it if `~/interagency-marketplace` exists.**
 
 ## Development Notes
 

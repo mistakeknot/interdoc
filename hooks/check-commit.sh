@@ -1,13 +1,14 @@
 #!/bin/bash
-# Suggest /interdoc after significant commits accumulate mid-session
+# Suggest Interdoc after significant commits accumulate mid-session
+# Triggers at 15+ commits since last AGENTS.md update
 
 # Only run if we're in a git repo
 if ! git rev-parse --git-dir > /dev/null 2>&1; then
     exit 0
 fi
 
-# Check if CLAUDE.md exists
-if [ ! -f "CLAUDE.md" ]; then
+# Check if AGENTS.md exists
+if [ ! -f "AGENTS.md" ]; then
     exit 0
 fi
 
@@ -25,23 +26,23 @@ if [ "$TIME_DIFF" -gt 5 ]; then
     exit 0
 fi
 
-# Get the last CLAUDE.md update time
-CLAUDE_UPDATE_TIME=$(git log -1 --format=%ct CLAUDE.md 2>/dev/null || echo 0)
-if [ "$CLAUDE_UPDATE_TIME" -eq 0 ]; then
+# Get the last AGENTS.md update commit
+AGENTS_UPDATE_COMMIT=$(git log -1 --format=%H AGENTS.md 2>/dev/null)
+if [ -z "$AGENTS_UPDATE_COMMIT" ]; then
     exit 0
 fi
 
-# Count commits since last CLAUDE.md update
-COMMITS_SINCE=$(git log --since="@$CLAUDE_UPDATE_TIME" --oneline 2>/dev/null | wc -l | tr -d ' ')
+# Count commits since last AGENTS.md update
+COMMITS_SINCE=$(git rev-list --count "$AGENTS_UPDATE_COMMIT"..HEAD 2>/dev/null || echo 0)
 
-# Trigger at higher threshold (10 commits) for mid-session
-if [ "$COMMITS_SINCE" -ge 10 ]; then
-    # Prevent re-triggering until CLAUDE.md is updated
-    TRIGGER_MARKER="/tmp/interdoc-triggered-$CLAUDE_UPDATE_TIME"
+# Trigger at higher threshold (15 commits) for mid-session
+if [ "$COMMITS_SINCE" -ge 15 ]; then
+    # Prevent re-triggering until AGENTS.md is updated
+    TRIGGER_MARKER="/tmp/interdoc-triggered-$(echo "$AGENTS_UPDATE_COMMIT" | cut -c1-8)"
     if [ -f "$TRIGGER_MARKER" ]; then
         exit 0
     fi
     touch "$TRIGGER_MARKER"
 
-    echo "There are now $COMMITS_SINCE commits since CLAUDE.md was last updated. Please update documentation using the Interdoc skill."
+    echo "There are now $COMMITS_SINCE commits since AGENTS.md was last updated. Consider updating documentation using the Interdoc skill."
 fi

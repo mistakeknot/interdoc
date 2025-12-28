@@ -1,7 +1,7 @@
 {
   "name": "interdoc",
-  "version": "3.0.0",
-  "description": "Recursive CLAUDE.md generator using parallel subagents. Generates or updates project documentation automatically.",
+  "version": "4.1.0",
+  "description": "Recursive AGENTS.md generator with incremental updates, diff previews, and smart monorepo scoping. Cross-AI compatible.",
   "author": {
     "name": "MK",
     "email": "mistakeknot@vibeguider.org"
