@@ -112,7 +112,7 @@ interdoc/
 ### New Project
 
 ```
-User: /interdoc
+User: generate documentation for this project
 
 Claude: I'll generate CLAUDE.md documentation for this project.
 
@@ -139,7 +139,7 @@ Committed: "Generate CLAUDE.md documentation"
 ### Existing Project
 
 ```
-User: /interdoc
+User: update CLAUDE.md
 
 Claude: CLAUDE.md exists. Checking for changes...
 
