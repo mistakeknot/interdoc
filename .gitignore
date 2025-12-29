@@ -1,0 +1,13 @@
+# OS
+.DS_Store
+
+# Editor/IDE
+.idea/
+.vscode/
+*.sw?
+
+# AI tool configs (local only)
+.claude/
+
+# Logs
+*.log
