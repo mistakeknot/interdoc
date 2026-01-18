@@ -16,9 +16,7 @@ Generate and maintain AGENTS.md files across a project using parallel subagents.
 **Manual invocation:**
 - User asks: "generate documentation", "create AGENTS.md", "document this project", "update AGENTS.md"
 
-**Automatic triggers (via hooks):**
-- SessionStart: No AGENTS.md exists, or 7+ days since last update, or 10+ commits since last update
-- PostToolUse: 15+ commits accumulated mid-session
+**Hooks are disabled by default.** Interdoc runs on manual invocation unless you add your own hook configuration.
 
 ## Dry Run Mode
 

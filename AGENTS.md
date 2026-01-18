@@ -10,18 +10,22 @@
 
 **Plugin Type:** Claude Code skill plugin
 **Plugin Namespace:** `interdoc` (from interagency-marketplace)
-**Current Version:** 4.3.0
+**Current Version:** 4.4.0
 
 ## Repository Structure
 
 ```
-/
+/ 
+├── .claude/
+│   └── agents/
+│       └── interdocumentarian.md  # Claude subagent for AGENTS.md authoring
 ├── .claude-plugin/
 │   └── plugin.json          # Plugin metadata and version (source of truth)
+├── .codex/
+│   └── INSTALL.md            # Codex CLI install instructions
 ├── hooks/
-│   ├── hooks.json           # Hook configuration
-│   ├── check-updates.sh     # SessionStart hook
-│   └── check-commit.sh      # PostToolUse hook
+│   ├── check-updates.sh     # Hook script (disabled by default)
+│   └── check-commit.sh      # Hook script (disabled by default)
 ├── skills/
 │   └── interdoc/
 │       └── SKILL.md         # Main skill definition
@@ -37,7 +41,7 @@
 
 | Skill | Trigger | Use Case |
 |-------|---------|----------|
-| `interdoc` | Natural language or hooks | Generate/update AGENTS.md documentation |
+| `interdoc` | Natural language (hooks disabled by default) | Generate/update AGENTS.md documentation |
 
 > **Note:** This is a Claude Code plugin skill, invoked via natural language (e.g., "generate documentation for this project"). It is NOT a slash command.
 
@@ -47,22 +51,15 @@
 - **Incremental updates**: Appends new content, preserves existing documentation
 - **CLAUDE.md harmonization**: Migrates docs from CLAUDE.md → AGENTS.md
 - **Unified diff previews**: Shows actual diffs before applying
+- **Dry run + cached apply**: Preview changes and apply last preview without re-analysis
 - **JSON schema output**: Subagents return structured JSON with sentinel markers
 - **Git-aware**: Uses commit messages and diffs for update context
 - **Scalability guardrails**: Concurrency limits, batch processing for large repos
+- **Claude subagent option**: Specialized subagent for high-quality AGENTS.md content
 
-## Hooks
+## Hooks (Disabled by Default)
 
-| Hook | Trigger | Threshold |
-|------|---------|-----------|
-| `check-updates.sh` | SessionStart | No AGENTS.md, 7+ days old, or 10+ commits |
-| `check-commit.sh` | PostToolUse | 15+ commits since last AGENTS.md update |
-
-**Hook improvements (v4.3.0):**
-- Always operate from repo root (fixes subdirectory invocation)
-- Per-repo state in `.git/interdoc/` (no cross-repo collision)
-- HEAD-tracking instead of timing heuristics
-- Atomic locking to prevent race conditions
+Hooks are not enabled by default. Manual invocation is the standard flow.
 
 ## Development
 
@@ -132,6 +129,18 @@ The plugin is distributed via `interagency-marketplace`. After pushing version c
 
 ## Recent Changes (December 2025)
 
+### v4.4.0 - Disable Hooks by Default
+- Removed auto-loaded hooks to avoid Claude Code hook validation errors
+- Manual invocation is the default workflow
+
+### v4.3.3 - Dry Run + Preview Cache
+- Added dry-run mode with summary + diff preview
+- Added "apply last preview" cache (HEAD-validated)
+
+### v4.3.2 - Claude Subagent + Codex Install
+- Added interdocumentarian Claude subagent for directory docs
+- Added Codex CLI install instructions
+
 ### v4.3.0 - Splinterpeer Robustness Improvements
 - Rewrote hooks with repo-root handling and HEAD-tracking
 - Added JSON schema with sentinel markers for subagent output
@@ -149,4 +158,4 @@ The plugin is distributed via `interagency-marketplace`. After pushing version c
 
 ---
 
-*Last updated: 2025-12-28*
+*Last updated: 2026-01-18*

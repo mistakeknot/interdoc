@@ -68,12 +68,9 @@ The skill automatically detects which mode to use:
 - **No AGENTS.md exists** → Generation mode (full recursive pass)
 - **AGENTS.md exists** → Update mode (incremental changes only)
 
-### Automatic: Hooks
+### Hooks (Disabled by Default)
 
-Interdoc includes hooks that suggest running the skill:
-
-- **SessionStart**: Triggers when no AGENTS.md exists, 7+ days since update, or 10+ commits
-- **PostToolUse**: Triggers after 15+ commits accumulate mid-session
+Interdoc does not ship with hooks enabled. Manual invocation is the default.
 
 ### Claude Code Subagents (Optional)
 
