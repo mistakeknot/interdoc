@@ -7,7 +7,9 @@
 *.sw?
 
 # AI tool configs (local only)
-.claude/
+.claude/*
+!.claude/agents/
+!.claude/agents/interdocumentarian.md
 
 # Logs
 *.log

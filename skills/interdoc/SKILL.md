@@ -139,6 +139,18 @@ Spawning 6 subagents...
 ⏳ Waiting for subagents to complete...
 ```
 
+### Claude Code Subagent Option (Recommended)
+
+If Claude Code subagents are available, use the bundled agent at:
+
+```
+.claude/agents/interdocumentarian.md
+```
+
+Dispatch one subagent per directory. Each subagent must return the same
+`<INTERDOC_OUTPUT_V1>` JSON sentinel format described below. The coordinator
+collects and consolidates the outputs.
+
 ### Subagent Prompt Template (Generation Mode)
 
 ```

@@ -75,6 +75,12 @@ Interdoc includes hooks that suggest running the skill:
 - **SessionStart**: Triggers when no AGENTS.md exists, 7+ days since update, or 10+ commits
 - **PostToolUse**: Triggers after 15+ commits accumulate mid-session
 
+### Claude Code Subagents (Optional)
+
+For faster directory analysis in Claude Code, Interdoc includes a specialized
+subagent at `.claude/agents/interdocumentarian.md`. When available, the main
+agent can dispatch one subagent per directory and consolidate the JSON outputs.
+
 ## How It Works
 
 ### Generation Mode
