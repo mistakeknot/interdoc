@@ -1,11 +1,10 @@
 {
   "name": "interdoc",
-  "version": "4.3.3",
+  "version": "4.3.4",
   "description": "Recursive AGENTS.md generator with CLAUDE.md harmonization, incremental updates, diff previews, and smart monorepo scoping. Cross-AI compatible.",
   "author": {
     "name": "MK",
     "email": "mistakeknot@vibeguider.org"
   },
-  "skills": ["./skills/interdoc"],
-  "hooks": ["./hooks/hooks.json"]
+  "skills": ["./skills/interdoc"]
 }
