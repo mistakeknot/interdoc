@@ -41,6 +41,16 @@ cd interdoc
 /plugin install .
 ```
 
+### Codex CLI (manual)
+
+Fetch and follow the instructions in `.codex/INSTALL.md`:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/mistakeknot/interdoc/main/.codex/INSTALL.md | sed -n '1,200p'
+```
+
+To update later, re-run the install command from that file.
+
 ## Usage
 
 ### Manual

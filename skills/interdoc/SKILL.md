@@ -20,6 +20,14 @@ Generate and maintain AGENTS.md files across a project using parallel subagents.
 - SessionStart: No AGENTS.md exists, or 7+ days since last update, or 10+ commits since last update
 - PostToolUse: 15+ commits accumulated mid-session
 
+## Codex CLI Notes
+
+Interdoc runs in Codex CLI as a manual, single-agent workflow:
+
+- **No hooks** in Codex CLI. Triggers are Claude Code only.
+- **No Task tool / subagents**. Do directory analysis sequentially in one session.
+- **Use the same steps**, but replace "spawn subagents" with "analyze directory yourself."
+
 ## Mode Detection
 
 The skill automatically detects which mode to use:
