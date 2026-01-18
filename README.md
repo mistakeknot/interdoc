@@ -81,6 +81,12 @@ For faster directory analysis in Claude Code, Interdoc includes a specialized
 subagent at `.claude/agents/interdocumentarian.md`. When available, the main
 agent can dispatch one subagent per directory and consolidate the JSON outputs.
 
+### Dry Run (Preview Only)
+
+Add "dry run" (or "preview only", "no write") to your request to generate a
+summary + diff preview without writing files. To apply later without re-analysis,
+say "apply last preview" (valid until HEAD changes).
+
 ## How It Works
 
 ### Generation Mode

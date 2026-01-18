@@ -20,6 +20,23 @@ Generate and maintain AGENTS.md files across a project using parallel subagents.
 - SessionStart: No AGENTS.md exists, or 7+ days since last update, or 10+ commits since last update
 - PostToolUse: 15+ commits accumulated mid-session
 
+## Dry Run Mode
+
+If the user request includes any of the following phrases, run in dry-run mode:
+- "dry run"
+- "preview only"
+- "no write"
+- "show changes only"
+
+**Dry run behavior:**
+- Generate proposals and diffs as usual
+- Show a summary block (counts + per-directory actions)
+- Show unified diffs
+- Do **not** write files
+- End with: "Dry run complete — no files were written. To apply without re-analysis, say 'apply last preview' (valid until HEAD changes)."
+
+If no dry-run phrase is present, **apply changes immediately without confirmation**.
+
 ## Codex CLI Notes
 
 Interdoc runs in Codex CLI as a manual, single-agent workflow:
@@ -110,6 +127,22 @@ This is a large project (247 files, 34 directories). How would you like to scope
   [A] Apply all / [D] Show details / [R] Review by directory
   ```
 - Only show full diffs on request or for individual review
+
+### Summary Block (Required)
+
+Before showing any diffs (dry-run or normal run), emit a concise summary:
+
+```
+Summary:
+- New AGENTS.md: N
+- Updated AGENTS.md: M
+- Deleted AGENTS.md: K
+
+By directory:
+- path/to/dir (new)
+- path/to/dir (updated)
+- path/to/dir (deleted)
+```
 
 ## Step 2: Spawn Subagents
 
@@ -278,6 +311,35 @@ After verification, consolidate subagent outputs:
 
 **Deduplicate patterns:**
 - If multiple subagents report the same convention, include it once in root AGENTS.md
+
+## Apply Last Preview (Cached)
+
+If the user says "apply last preview":
+
+1. Read cache metadata from `.git/interdoc/preview.json`
+2. Verify cache is still valid:
+   - HEAD hash matches cached HEAD
+   - Working tree is clean (no uncommitted changes)
+3. If valid, apply `.git/interdoc/preview.patch` and report results
+4. If invalid, refuse and request a fresh dry run
+
+**Cache format (example):**
+```
+{
+  "schema": "interdoc.preview.v1",
+  "head": "<git sha>",
+  "timestamp": "<unix epoch>",
+  "summary": {
+    "new": 0,
+    "updated": 0,
+    "deleted": 0,
+    "by_directory": [
+      { "path": "path/to/dir", "action": "updated" }
+    ]
+  },
+  "patch_path": ".git/interdoc/preview.patch"
+}
+```
 - Pick the clearest description
 - Note which directories share the pattern
 
