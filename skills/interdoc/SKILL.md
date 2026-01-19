@@ -43,6 +43,35 @@ Interdoc runs in Codex CLI as a manual, single-agent workflow:
 - **No Task tool / subagents**. Do directory analysis sequentially in one session.
 - **Use the same steps**, but replace "spawn subagents" with "analyze directory yourself."
 
+## Change-Set Update Mode (Optional)
+
+If the user requests a change-set update (e.g., "update AGENTS.md for changed files only" or "change-set update"):
+- Use `git diff --name-only` to identify changed paths.
+- Map changed files to directories, then analyze only those directories.
+- If no changes are detected, respond: "No updates required."
+
+Example:
+```bash
+git diff --name-only HEAD~1..HEAD
+```
+
+## Doc Coverage Report (Optional)
+
+If the user requests a coverage report (e.g., "doc coverage" or "coverage report"):
+- Report percent coverage of directories that warrant AGENTS.md.
+- List directories without AGENTS.md.
+
+Define "warrants AGENTS.md" as directories with:
+- A package manifest, OR
+- 5+ source files
+
+## Style Lint (Optional)
+
+If the user requests a lint pass (e.g., "lint AGENTS.md" or "doc lint"), emit warnings only (never block):
+- Missing required sections (Purpose, Key Files, Architecture, Conventions, Gotchas)
+- Empty Gotchas section
+- Paragraphs longer than ~6 lines
+
 ## Mode Detection
 
 The skill automatically detects which mode to use:

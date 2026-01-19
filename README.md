@@ -70,6 +70,14 @@ The skill automatically detects which mode to use:
 - **No AGENTS.md exists** → Generation mode (full recursive pass)
 - **AGENTS.md exists** → Update mode (incremental changes only)
 
+### Optional Modes
+
+You can request additional behaviors via phrases in your prompt:
+
+- **Change-set update**: "update AGENTS.md for changed files only"
+- **Coverage report**: "doc coverage" or "coverage report"
+- **Style lint**: "lint AGENTS.md" or "doc lint"
+
 ### Hooks (Disabled by Default)
 
 Interdoc does not ship with hooks enabled. Manual invocation is the default.
@@ -96,6 +104,14 @@ You can enable a non-blocking post-commit reminder to update AGENTS.md:
 
 This hook never blocks commits; it only prints a reminder when AGENTS.md may be stale.
 
+### Audit Script (Optional)
+
+Run a quick coverage + lint pass locally:
+
+```bash
+./hooks/tools/interdoc-audit.sh
+```
+
 ## How It Works
 
 ### Generation Mode
@@ -108,7 +124,7 @@ This hook never blocks commits; it only prints a reminder when AGENTS.md may be 
    - Decision on whether directory warrants its own AGENTS.md
 5. **Consolidate** - Deduplicate patterns, create cross-references
 6. **Diff preview** - Show proposed files before writing
-7. **Write and commit** - After user approval
+7. **Write and commit** - Apply immediately unless dry-run is requested
 
 ### Update Mode
 
@@ -117,7 +133,7 @@ This hook never blocks commits; it only prints a reminder when AGENTS.md may be 
 3. **Spawn targeted subagents** - With git context (diffs, commit messages)
 4. **Incremental proposals** - ADDITIONS, MODIFICATIONS, DELETIONS (not full rewrites)
 5. **Diff preview** - Show exact changes in unified diff format
-6. **Apply approved updates** - Preserve existing content, append new sections
+6. **Apply updates** - Preserve existing content, append new sections (unless dry-run)
 
 ## Example
 

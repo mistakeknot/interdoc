@@ -10,7 +10,7 @@
 
 **Plugin Type:** Claude Code skill plugin
 **Plugin Namespace:** `interdoc` (from interagency-marketplace)
-**Current Version:** 4.4.0
+**Current Version:** 4.4.3
 
 ## Repository Structure
 
@@ -26,6 +26,11 @@
 ├── hooks/
 │   ├── check-updates.sh     # Hook script (disabled by default)
 │   └── check-commit.sh      # Hook script (disabled by default)
+│   ├── git/
+│   │   ├── post-commit       # Advisory commit hook
+│   │   └── install-post-commit.sh
+│   └── tools/
+│       └── interdoc-audit.sh  # Coverage + lint helper
 ├── skills/
 │   └── interdoc/
 │       └── SKILL.md         # Main skill definition
@@ -46,6 +51,8 @@
 **Discovery:** In Claude Code, ask “List all available Skills” to see interdoc, or run `/interdoc`.
 
 **Advisory hook (optional):** Run `./hooks/git/install-post-commit.sh` to enable a non-blocking reminder after commits.
+
+**Optional modes:** Use phrases like "change-set update", "doc coverage", or "doc lint" to trigger specialized behaviors.
 
 > **Note:** This is a Claude Code plugin skill, invoked via natural language (e.g., "generate documentation for this project"). It is NOT a slash command.
 
@@ -131,7 +138,11 @@ The plugin is distributed via `interagency-marketplace`. After pushing version c
 6. **Update ~/interagency-marketplace** with new version
 7. Push marketplace changes
 
-## Recent Changes (December 2025)
+## Recent Changes (January 2026)
+
+### v4.4.3 - Phase 1 Roadmap: Coverage + Lint + Change-Set
+- Added change-set update mode, coverage report, and style lint triggers
+- Added optional local audit script (coverage + lint)
 
 ### v4.4.0 - Disable Hooks by Default
 - Removed auto-loaded hooks to avoid Claude Code hook validation errors
