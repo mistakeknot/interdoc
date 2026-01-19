@@ -43,6 +43,8 @@
 |-------|---------|----------|
 | `interdoc` | Natural language (hooks disabled by default) | Generate/update AGENTS.md documentation |
 
+**Discovery:** In Claude Code, ask “List all available Skills” to see interdoc, or run `/interdoc`.
+
 > **Note:** This is a Claude Code plugin skill, invoked via natural language (e.g., "generate documentation for this project"). It is NOT a slash command.
 
 ## Key Features

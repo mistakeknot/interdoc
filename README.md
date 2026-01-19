@@ -64,6 +64,8 @@ Ask Claude to generate or update documentation:
 "document this codebase"
 ```
 
+Tip: In Claude Code, you can say "List all available Skills" to see interdoc.
+
 The skill automatically detects which mode to use:
 - **No AGENTS.md exists** → Generation mode (full recursive pass)
 - **AGENTS.md exists** → Update mode (incremental changes only)

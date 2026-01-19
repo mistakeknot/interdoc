@@ -1,6 +1,6 @@
 ---
 name: interdoc
-description: Generate or update AGENTS.md documentation using parallel subagents. Triggers automatically via hooks or when user asks to generate/update documentation.
+description: Generate or update AGENTS.md for this repo. Use when asked to “generate AGENTS.md”, “update AGENTS.md”, “document this repo”, or “document this codebase”.
 ---
 
 # Interdoc: Recursive Documentation Generator
