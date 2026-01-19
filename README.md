@@ -86,6 +86,16 @@ Add "dry run" (or "preview only", "no write") to your request to generate a
 summary + diff preview without writing files. To apply later without re-analysis,
 say "apply last preview" (valid until HEAD changes).
 
+### Advisory Commit Hook (Optional)
+
+You can enable a non-blocking post-commit reminder to update AGENTS.md:
+
+```bash
+./hooks/git/install-post-commit.sh
+```
+
+This hook never blocks commits; it only prints a reminder when AGENTS.md may be stale.
+
 ## How It Works
 
 ### Generation Mode

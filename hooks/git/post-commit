@@ -1,0 +1,33 @@
+#!/bin/bash
+# Advisory hook: remind to update AGENTS.md when it may be stale.
+# Never blocks commits.
+
+set -euo pipefail
+
+if ! git rev-parse --git-dir >/dev/null 2>&1; then
+  exit 0
+fi
+
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+cd "$REPO_ROOT"
+
+if [ ! -f "AGENTS.md" ]; then
+  echo "[interdoc] No AGENTS.md found. Consider running /interdoc to generate docs."
+  exit 0
+fi
+
+# Skip if AGENTS.md is currently uncommitted (user is editing)
+if [ -n "$(git status --porcelain -- AGENTS.md 2>/dev/null)" ]; then
+  exit 0
+fi
+
+AGENTS_UPDATE_COMMIT=$(git log -1 --format=%H -- AGENTS.md 2>/dev/null) || true
+if [ -z "$AGENTS_UPDATE_COMMIT" ]; then
+  echo "[interdoc] AGENTS.md exists but isn't committed yet. Consider committing or running /interdoc."
+  exit 0
+fi
+
+COMMITS_SINCE=$(git rev-list --count "$AGENTS_UPDATE_COMMIT"..HEAD 2>/dev/null) || COMMITS_SINCE=""
+if [ -n "$COMMITS_SINCE" ] && [ "$COMMITS_SINCE" -ge 10 ]; then
+  echo "[interdoc] $COMMITS_SINCE commits since AGENTS.md update. Consider running /interdoc (or 'interdoc dry run')."
+fi

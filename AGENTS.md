@@ -45,6 +45,8 @@
 
 **Discovery:** In Claude Code, ask “List all available Skills” to see interdoc, or run `/interdoc`.
 
+**Advisory hook (optional):** Run `./hooks/git/install-post-commit.sh` to enable a non-blocking reminder after commits.
+
 > **Note:** This is a Claude Code plugin skill, invoked via natural language (e.g., "generate documentation for this project"). It is NOT a slash command.
 
 ## Key Features
