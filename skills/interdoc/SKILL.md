@@ -1,7 +1,27 @@
 ---
 name: interdoc
-description: Generate or update AGENTS.md for this repo. Use when asked to “generate AGENTS.md”, “update AGENTS.md”, “document this repo”, or “document this codebase”.
+description: Generate or update AGENTS.md for this repo. Use when asked to "generate AGENTS.md", "update AGENTS.md", "document this repo", or "document this codebase".
 ---
+
+<objective>
+Generate and maintain AGENTS.md files across a project using parallel subagents.
+Each subagent documents a directory, and the root agent consolidates into coherent project documentation.
+</objective>
+
+<success_criteria>
+- Every directory that warrants documentation has an AGENTS.md
+- Root AGENTS.md provides clear project overview
+- No duplicate information across files
+- Documentation is actionable for coding agents
+- Cross-AI compatible (works with Claude Code, Codex CLI, etc.)
+</success_criteria>
+
+<reference_docs>
+- [Generation Mode Details](./references/generation-mode.md) - Directory detection, subagent spawning, consolidation
+- [Update Mode Details](./references/update-mode.md) - Change detection, operation types, stale content
+- [CLAUDE.md Harmonization](./references/harmonization.md) - Heading classification, migration rules
+- [Output Schema](./references/output-schema.json) - JSON Schema for subagent validation
+</reference_docs>
 
 # Interdoc: Recursive Documentation Generator
 
@@ -81,7 +101,53 @@ The skill automatically detects which mode to use:
 
 ---
 
+<workflows>
+
 # Generation Mode Workflow
+
+> **Reference:** See [generation-mode.md](./references/generation-mode.md) for detailed tables on language detection, manifest types, and consolidation rules.
+
+## Step 0: Batch Git Context Collection (Performance Optimization)
+
+Before analyzing directories, collect all git context in a single pass. This eliminates N+1 queries during subagent spawning.
+
+**Skip this step if:**
+- Not a git repository
+- Fresh generation (no existing AGENTS.md files)
+
+**Collect once, use many:**
+
+```bash
+# 1. Get all AGENTS.md last-modified commits in one query
+git log --format="%H %ct" --name-only -- "*/AGENTS.md" "AGENTS.md" 2>/dev/null | \
+  awk '/^[a-f0-9]{40}/ {commit=$1; time=$2} /AGENTS.md$/ {print $0, commit, time}' \
+  > /tmp/interdoc_agents_times.log
+
+# 2. Get all commits with changed files since oldest AGENTS.md
+OLDEST_AGENTS_COMMIT=$(git log --format="%H" --diff-filter=A -- "*/AGENTS.md" "AGENTS.md" | tail -1)
+if [ -n "$OLDEST_AGENTS_COMMIT" ]; then
+  git log --format="COMMIT:%H|%ad|%s" --date=short --name-only "$OLDEST_AGENTS_COMMIT"..HEAD \
+    > /tmp/interdoc_all_changes.log
+fi
+```
+
+**Build directory-to-changes map:**
+
+Parse the collected data into a map structure:
+```
+{
+  "packages/api": {
+    "agents_md_commit": "abc123",
+    "agents_md_time": 1704067200,
+    "changed_files": ["src/routes/auth.ts", "src/middleware/rate.ts"],
+    "commits_since": 12,
+    "commit_messages": ["Add auth middleware", "Fix rate limiting"]
+  },
+  "packages/core": { ... }
+}
+```
+
+**Pass to subagents:** Include pre-collected context in subagent prompts instead of having each subagent query git independently.
 
 ## Step 1: Analyze Project Structure
 
@@ -104,6 +170,75 @@ Build a list of directories to document. Include:
 - Directories with existing AGENTS.md files (high priority)
 - Directories with 5+ source files
 - Major structural directories (src/, lib/, packages/, apps/)
+
+### Directory Candidate Caching
+
+Cache directory candidates to avoid rescanning on repeat runs.
+
+**Cache location:** `.git/interdoc/candidates.json`
+
+**Cache schema:**
+```json
+{
+  "schema": "interdoc.candidates.v1",
+  "repo_commit": "abc123def456",
+  "timestamp": 1704067200,
+  "candidates": [
+    {
+      "path": "./packages/api",
+      "reason": "package_manifest",
+      "source_count": 23,
+      "has_agents_md": true
+    },
+    {
+      "path": "./src/utils",
+      "reason": "source_threshold",
+      "source_count": 8,
+      "has_agents_md": false
+    }
+  ]
+}
+```
+
+**Cache check (before scanning):**
+```bash
+# Check if cache exists and is valid
+CACHE_FILE=".git/interdoc/candidates.json"
+CURRENT_COMMIT=$(git rev-parse HEAD)
+
+if [ -f "$CACHE_FILE" ]; then
+  CACHED_COMMIT=$(jq -r '.repo_commit' "$CACHE_FILE" 2>/dev/null)
+  if [ "$CACHED_COMMIT" = "$CURRENT_COMMIT" ]; then
+    echo "Using cached directory candidates"
+    # Use jq to extract candidates array
+    exit 0  # Skip scanning
+  fi
+fi
+```
+
+**Cache invalidation triggers:**
+- Any new commit (repo_commit changes)
+- Cache file missing or corrupted
+- User requests `--no-cache` or `--refresh`
+
+**Cache update (after scanning):**
+```bash
+mkdir -p .git/interdoc
+cat > "$CACHE_FILE" << EOF
+{
+  "schema": "interdoc.candidates.v1",
+  "repo_commit": "$CURRENT_COMMIT",
+  "timestamp": $(date +%s),
+  "candidates": $CANDIDATES_JSON
+}
+EOF
+```
+
+**Reason codes:**
+- `package_manifest` - Has package.json, Cargo.toml, etc.
+- `source_threshold` - Has 5+ source files
+- `existing_agents_md` - Already has AGENTS.md
+- `structural` - Is a major structural directory (src/, lib/, etc.)
 
 ### Scoping for Large Monorepos
 
@@ -197,6 +332,44 @@ Spawning 6 subagents...
 - packages/shadow-work-mcp
 
 ⏳ Waiting for subagents to complete...
+```
+
+### Streaming Progress (Required)
+
+**Emit progress after each subagent completes.** This provides visibility during long-running operations:
+
+```
+[1/6] ✓ packages/ui-web/src/components - warrants AGENTS.md (62 lines)
+[2/6] ✓ packages/api/src - warrants AGENTS.md (45 lines)
+[3/6] ✓ src-tauri/src - warrants AGENTS.md (38 lines)
+[4/6] ✗ scripts - does not warrant AGENTS.md (utility scripts only)
+[5/6] ✓ packages/debug-tools - warrants AGENTS.md (28 lines)
+[6/6] ✓ packages/shadow-work-mcp - warrants AGENTS.md (51 lines)
+
+✅ All subagents complete (6/6)
+   5 directories warrant AGENTS.md
+   1 directory skipped
+```
+
+**Progress line format:**
+```
+[{completed}/{total}] {status} {directory} - {result} ({details})
+```
+
+Where:
+- `status`: `✓` for success, `✗` for skipped, `⚠` for error
+- `result`: "warrants AGENTS.md" / "does not warrant AGENTS.md" / "parse error"
+- `details`: line count for successful, reason for skipped/error
+
+**For batched execution**, show batch-level and item-level progress:
+```
+Batch 1/3: Processing directories 1-16...
+[1/16] ✓ packages/api - warrants AGENTS.md (45 lines)
+[2/16] ✓ packages/core - warrants AGENTS.md (67 lines)
+...
+✅ Batch 1 complete (16/16, 14 warrant docs)
+
+Batch 2/3: Processing directories 17-32...
 ```
 
 ### Claude Code Subagent Option (Recommended)
@@ -293,6 +466,54 @@ The root agent MUST parse subagent output as follows:
    - Report to user: "Subagent for {path} returned invalid output"
 
 **Never attempt to parse output that doesn't have the sentinel markers.**
+
+### JSON Schema Validation
+
+Validate parsed JSON against the schema at `skills/interdoc/references/output-schema.json`.
+
+**Validation error codes:**
+
+| Code | Meaning | Action |
+|------|---------|--------|
+| `E001` | Missing sentinel markers | Skip directory, report error |
+| `E002` | Invalid JSON syntax | Skip directory, report parse error |
+| `E003` | Missing required field | Skip directory, report which field |
+| `E004` | Wrong type for field | Attempt coercion, skip if fails |
+| `E005` | Invalid enum value | Skip directory, report valid options |
+| `E006` | Empty required array | Skip directory, report which array |
+| `E007` | Section name not title case | Auto-fix (capitalize first letters) |
+
+**Validation output format:**
+
+```
+Validating subagent output for packages/api...
+✓ Sentinel markers found
+✓ Valid JSON syntax
+✓ Schema validation passed
+  - schema: "interdoc.subagent.v1" ✓
+  - mode: "generation" ✓
+  - directory: "packages/api" ✓
+  - warrants_agents_md: true ✓
+  - agents_md_sections: 5 sections ✓
+```
+
+**On validation failure:**
+
+```
+⚠️ Validation failed for packages/api [E003]
+
+Missing required field: "summary"
+Expected: string (10-500 chars)
+
+Options:
+[R]etry subagent / [S]kip directory / [A]bort run
+```
+
+**Coercion rules (E004):**
+- `"true"` → `true` (string to boolean)
+- `"false"` → `false`
+- `["single item"]` → `"single item"` (array to string, if single element)
+- Log warning when coercion applied
 
 ## Step 3: Verify Subagent Results
 
@@ -503,10 +724,40 @@ Generated by Interdoc"
 
 # Update Mode Workflow
 
-## Step 1: Detect Changes
+> **Reference:** See [update-mode.md](./references/update-mode.md) for operation types, stale content detection, and preservation rules.
 
-Find what changed since last AGENTS.md update:
+## Step 0: Batch Git Context Collection
 
+**Use the same batch collection from Generation Mode Step 0.** This provides:
+- All AGENTS.md modification times in one query
+- All file changes since oldest AGENTS.md
+- Commit messages grouped by directory
+
+The batch-collected data is used in Step 1 to determine which directories need updates.
+
+## Step 1: Detect Changes Using Batch Context
+
+Using the pre-collected git context (from Step 0), identify directories needing updates:
+
+**From batch data, extract per-directory:**
+```
+directory_context = {
+  "agents_md_commit": <from interdoc_agents_times.log>,
+  "agents_md_time": <from interdoc_agents_times.log>,
+  "changed_files": <from interdoc_all_changes.log, filtered by directory>,
+  "commits_since": <count of commits touching this directory>,
+  "commit_messages": <messages from commits touching this directory>,
+  "days_since": <calculated from agents_md_time>
+}
+```
+
+**Skip up-to-date directories:**
+- If `changed_files` is empty for a directory, skip it
+- If no source files changed after `agents_md_time`, skip it
+
+**Legacy per-directory queries (fallback only):**
+
+If batch collection failed or data is incomplete, fall back to individual queries:
 ```bash
 # Get the commit hash when AGENTS.md was last modified
 AGENTS_UPDATE_COMMIT=$(git log -1 --format=%H AGENTS.md)
@@ -523,21 +774,6 @@ git diff --name-only "$AGENTS_UPDATE_COMMIT" HEAD
 
 # Count commits since update
 COMMITS_SINCE=$(git rev-list --count "$AGENTS_UPDATE_COMMIT"..HEAD)
-```
-
-Group changed files by directory.
-
-### Skip Up-to-Date Directories
-
-For each directory with an AGENTS.md:
-```bash
-# Check if directory's AGENTS.md is newer than source changes
-DIR_AGENTS_TIME=$(git log -1 --format=%ct "$DIR/AGENTS.md")
-LATEST_SOURCE_TIME=$(git log -1 --format=%ct -- "$DIR/*.ts" "$DIR/*.js" "$DIR/*.py")
-
-if [ "$DIR_AGENTS_TIME" -gt "$LATEST_SOURCE_TIME" ]; then
-    # Skip - AGENTS.md is up to date
-fi
 ```
 
 ## Step 2: Spawn Targeted Subagents
@@ -779,6 +1015,8 @@ For update mode, create a consolidated "Recent Changes" section:
 ---
 
 # CLAUDE.md Harmonization
+
+> **Reference:** See [harmonization.md](./references/harmonization.md) for heading classification tables, user markers, and migration algorithm.
 
 When Interdoc runs, it also checks for CLAUDE.md files and harmonizes them with AGENTS.md to reduce maintenance burden.
 
@@ -1153,3 +1391,42 @@ User: A
 Claude: Applied 2 updates.
 Committed: "Update AGENTS.md documentation"
 ```
+
+</workflows>
+
+---
+
+<quick_reference>
+
+## Command Quick Reference
+
+| Trigger | Mode | Scope |
+|---------|------|-------|
+| "generate AGENTS.md" | Generation | Full project |
+| "update AGENTS.md" | Update | Changed directories |
+| "change-set update" | Update | Git diff only |
+| "doc coverage" | Report | Coverage stats |
+| "lint AGENTS.md" | Lint | Style warnings |
+| "dry run" | Any + Preview | No writes |
+
+## Performance Optimizations
+
+| Feature | Benefit |
+|---------|---------|
+| Batch Git Collection | Eliminates N+1 queries |
+| Directory Caching | Skips rescanning unchanged repos |
+| Streaming Progress | Visibility during long runs |
+| JSON Schema Validation | Early error detection |
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `SKILL.md` | Main workflow instructions |
+| `references/generation-mode.md` | Directory detection, spawning |
+| `references/update-mode.md` | Change detection, operations |
+| `references/harmonization.md` | CLAUDE.md migration |
+| `references/output-schema.json` | Subagent validation |
+| `.claude/agents/interdocumentarian.md` | Subagent definition |
+
+</quick_reference>

@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://interdoc.dev/schemas/subagent-output.v1.json",
+  "title": "Interdoc Subagent Output",
+  "description": "Schema for validating interdocumentarian subagent JSON output",
+  "type": "object",
+  "required": ["schema", "mode", "directory", "warrants_agents_md"],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "interdoc.subagent.v1",
+      "description": "Schema version identifier"
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["generation", "update"],
+      "description": "Whether this is a fresh generation or an update"
+    },
+    "directory": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Path to the directory being documented"
+    },
+    "warrants_agents_md": {
+      "type": "boolean",
+      "description": "Whether this directory warrants its own AGENTS.md"
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 500,
+      "description": "One paragraph summary for parent AGENTS.md"
+    },
+    "patterns_discovered": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["pattern", "description"],
+        "properties": {
+          "pattern": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "examples": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "cross_cutting_notes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Notes about cross-cutting concerns affecting other parts of codebase"
+    },
+    "agents_md_sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["section", "content"],
+        "properties": {
+          "section": {
+            "type": "string",
+            "enum": ["Purpose", "Key Files", "Architecture", "Conventions", "Gotchas", "Commands", "Dependencies", "Recent Updates"],
+            "description": "Section heading (title case)"
+          },
+          "content": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Markdown content for the section"
+          }
+        }
+      },
+      "description": "Sections to include in AGENTS.md (only if warrants_agents_md is true)"
+    },
+    "changes_summary": {
+      "type": "string",
+      "description": "Brief description of what changed (update mode only)"
+    },
+    "updates_needed": {
+      "type": "boolean",
+      "description": "Whether updates are needed (update mode only)"
+    },
+    "operations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["op"],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": ["add_section", "append_to_section", "replace_in_section", "delete_section"]
+          },
+          "heading": { "type": "string" },
+          "position": { "type": "string" },
+          "content": { "type": "string" },
+          "items": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "find": { "type": "string" },
+          "replace": { "type": "string" },
+          "context_before": { "type": "string" },
+          "context_after": { "type": "string" },
+          "reason": { "type": "string" }
+        }
+      },
+      "description": "Patch operations for update mode"
+    },
+    "stale_content": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["heading", "issue"],
+        "properties": {
+          "heading": { "type": "string" },
+          "issue": { "type": "string" },
+          "suggestion": { "type": "string" }
+        }
+      },
+      "description": "Warnings about outdated documentation"
+    },
+    "errors": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Any errors encountered during analysis"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "mode": { "const": "generation" } }
+      },
+      "then": {
+        "required": ["summary"]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "mode": { "const": "generation" },
+          "warrants_agents_md": { "const": true }
+        }
+      },
+      "then": {
+        "required": ["agents_md_sections"],
+        "properties": {
+          "agents_md_sections": {
+            "minItems": 3
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "mode": { "const": "update" } }
+      },
+      "then": {
+        "required": ["changes_summary", "updates_needed"]
+      }
+    }
+  ]
+}
