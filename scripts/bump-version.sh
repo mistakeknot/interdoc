@@ -79,7 +79,7 @@ update_file \
     ".claude-plugin/plugin.json"
 
 # Update marketplace entry (matches by plugin name context)
-MARKETPLACE_CURRENT=$(grep -A5 '"interdoc"' "$MARKETPLACE_ROOT/.claude-plugin/marketplace.json" | grep '"version"' | sed 's/.*"\([0-9][^"]*\)".*/\1/')
+MARKETPLACE_CURRENT=$(grep -A10 '"interdoc"' "$MARKETPLACE_ROOT/.claude-plugin/marketplace.json" | grep '"version"' | sed 's/.*"\([0-9][^"]*\)".*/\1/')
 update_file \
     "$MARKETPLACE_ROOT/.claude-plugin/marketplace.json" \
     "\"version\": \"$MARKETPLACE_CURRENT\"" \
