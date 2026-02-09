@@ -7,8 +7,8 @@
 
 When working on this repo, Claude should:
 
-- **Remind user to bump version** after committing changes to SKILL.md or hooks
-- **Update the marketplace** after pushing version changes to interdoc
+- **Remind user to bump version** after committing changes to SKILL.md or hooks — use `/interpub:release <version>` or `scripts/bump-version.sh <version>`
+- **Update the marketplace** — both tools above handle this automatically
 - Use the Read tool instead of cat for file operations
 - Prefer Edit tool over sed/awk for file modifications
 
