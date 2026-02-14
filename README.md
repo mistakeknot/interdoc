@@ -19,6 +19,7 @@ Interdoc generates and maintains AGENTS.md documentation for your projects. It s
 - **Git-aware**: Uses commit messages and diffs for context in updates
 - **Consolidation**: Deduplicates patterns, identifies cross-cutting concerns
 - **Dry-run validation**: Validates structured output before applying
+- **GPT-powered review**: Sends generated docs to GPT 5.2 Pro for independent critique
 - **Cross-AI compatible**: AGENTS.md works with Claude Code, Codex CLI, and other AI tools
 
 ## Installation
@@ -134,6 +135,17 @@ Run a quick coverage + lint pass locally:
 4. **Incremental proposals** - ADDITIONS, MODIFICATIONS, DELETIONS (not full rewrites)
 5. **Diff preview** - Show exact changes in unified diff format
 6. **Apply updates** - Preserve existing content, append new sections (unless dry-run)
+
+### GPT-Powered Review (NEW in v5.0.0)
+
+After generating documentation, Interdoc automatically sends it to GPT 5.2 Pro for independent critique via [Oracle](https://github.com/steipete/oracle). This catches blind spots that self-review misses.
+
+- **Automatic**: Runs after every generation/update
+- **Safe**: Never blocks if Oracle is unavailable
+- **Smart**: Only prompts for significant changes
+- **Secure**: Files are scanned for secrets before upload
+
+Requires Oracle CLI and an active ChatGPT session. See AGENTS.md for setup details.
 
 ## Example
 

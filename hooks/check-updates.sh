@@ -21,7 +21,7 @@ cd "$REPO_ROOT"
 
 # If no AGENTS.md exists at repo root, suggest generating one
 if [ ! -f "AGENTS.md" ]; then
-    echo "No AGENTS.md found. Consider generating documentation for this project using the Interdoc skill."
+    echo '{"action": "generate", "reason": "no_agents_md"}'
     exit 0
 fi
 
@@ -36,7 +36,7 @@ AGENTS_UPDATE_TIME=$(git log -1 --format=%ct -- AGENTS.md 2>/dev/null) || true
 
 # If AGENTS.md exists but has never been committed, suggest committing it
 if [ -z "$AGENTS_UPDATE_COMMIT" ] || [ -z "$AGENTS_UPDATE_TIME" ]; then
-    echo "AGENTS.md exists but isn't committed yet. Consider committing it or running Interdoc update."
+    echo '{"action": "update", "reason": "uncommitted"}'
     exit 0
 fi
 
@@ -50,17 +50,17 @@ COMMITS_SINCE=$(git rev-list --count "$AGENTS_UPDATE_COMMIT"..HEAD 2>/dev/null) 
 
 # Trigger if 7+ days since update
 if [ "$DAYS_SINCE" -ge 7 ]; then
-    echo "AGENTS.md was last updated $DAYS_SINCE days ago. Consider updating documentation using the Interdoc skill."
+    echo "{\"action\": \"update\", \"reason\": \"stale\", \"days_since\": $DAYS_SINCE}"
     exit 0
 fi
 
 # Trigger if 10+ commits since update (skip if shallow clone prevented count)
 if [ -n "$COMMITS_SINCE" ] && [ "$COMMITS_SINCE" -ge 10 ]; then
-    echo "There are $COMMITS_SINCE commits since AGENTS.md was last updated. Consider updating documentation using the Interdoc skill."
+    echo "{\"action\": \"update\", \"reason\": \"commits\", \"commits_since\": $COMMITS_SINCE}"
     exit 0
 fi
 
 # Handle shallow clone: if we couldn't count commits but it's been a few days, suggest update
 if [ -z "$COMMITS_SINCE" ] && [ "$DAYS_SINCE" -ge 3 ]; then
-    echo "AGENTS.md was last updated $DAYS_SINCE days ago (shallow clone detected). Consider updating documentation using the Interdoc skill."
+    echo "{\"action\": \"update\", \"reason\": \"stale_shallow\", \"days_since\": $DAYS_SINCE}"
 fi

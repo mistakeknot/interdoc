@@ -3,6 +3,19 @@
 > **Documentation is in AGENTS.md** - This file contains Claude-specific settings only.
 > For project documentation, architecture, and conventions, see [AGENTS.md](./AGENTS.md).
 
+## Overview
+
+Recursive AGENTS.md generator with integrated GPT 5.2 Pro critique. Generates documentation using parallel subagents, then automatically sends to GPT for independent review. Non-controversial improvements are applied silently; significant changes prompt for approval.
+
+## GPT Review (via Oracle)
+
+After generating/updating AGENTS.md, Interdoc sends docs to GPT 5.2 Pro for critique.
+
+- Requires Oracle CLI and active ChatGPT session
+- Auto-skips if Oracle unavailable (never blocks)
+- Non-controversial changes applied silently
+- Significant changes prompt for approval
+
 ## Claude-Specific Settings
 
 When working on this repo, Claude should:

@@ -1,6 +1,6 @@
 ---
 name: interdoc
-description: Generate or update AGENTS.md for this repo. Use when asked to "generate AGENTS.md", "update AGENTS.md", "document this repo", or "document this codebase".
+description: Generate, update, and review AGENTS.md with GPT 5.2 Pro critique. Use when asked to "generate AGENTS.md", "update AGENTS.md", "document this repo", "document this codebase", "review docs", "critique docs", or "auracoil".
 ---
 
 <objective>
@@ -21,6 +21,7 @@ Each subagent documents a directory, and the root agent consolidates into cohere
 - [Update Mode Details](./references/update-mode.md) - Change detection, operation types, stale content
 - [CLAUDE.md Harmonization](./references/harmonization.md) - Heading classification, migration rules
 - [Output Schema](./references/output-schema.json) - JSON Schema for subagent validation
+- [Review Phase](./references/review-phase.md) - GPT 5.2 Pro critique, evidence gathering, significance classification
 </reference_docs>
 
 # Interdoc: Recursive Documentation Generator
@@ -311,6 +312,27 @@ By directory:
 For each directory identified, spawn a subagent using the Task tool.
 
 **Spawn subagents in parallel** using multiple Task tool calls in a single message.
+
+### Parallel Subagent Invocation (CRITICAL)
+
+To achieve TRUE parallelism, ALL Task tool calls must appear in a SINGLE assistant message.
+
+**Correct (parallel execution):**
+One assistant message containing 4 Task tool invocations:
+- Task 1: description="Document packages/api", subagent_type="interdocumentarian", prompt="..."
+- Task 2: description="Document packages/core", subagent_type="interdocumentarian", prompt="..."
+- Task 3: description="Document packages/ui", subagent_type="interdocumentarian", prompt="..."
+- Task 4: description="Document src/utils", subagent_type="interdocumentarian", prompt="..."
+
+All 4 subagents start simultaneously. Results return together.
+
+**Wrong (sequential execution):**
+Message 1: Task for packages/api → wait for result
+Message 2: Task for packages/core → wait for result
+Message 3: Task for packages/ui → wait for result
+Message 4: Task for src/utils → wait for result
+
+This takes 4x longer because each subagent waits for the previous one.
 
 **Concurrency enforcement:** If spawning more than 16 subagents, batch them:
 ```
@@ -997,6 +1019,117 @@ For update mode, create a consolidated "Recent Changes" section:
 
 ---
 
+# Review Phase (Post-Generation GPT Critique)
+
+> **Reference:** See [review-phase.md](./references/review-phase.md) for evidence gathering, prompt structure, and significance classification.
+
+After generating or updating AGENTS.md, automatically send it to GPT 5.2 Pro for critique via Oracle. This step catches blind spots that self-review misses by getting an independent model's perspective.
+
+## When to Run
+
+- **Always** after generation or update, unless:
+  - User said "no review", "skip review", or "no GPT"
+  - Oracle is not installed (`which oracle` fails)
+  - AGENTS.md is unchanged (update mode found nothing to change)
+
+## Step R1: Oracle Pre-flight
+
+Before spending time on review, verify the Oracle session is alive:
+
+```bash
+READY=$(DISPLAY=:99 CHROME_PATH=/usr/local/bin/google-chrome-wrapper \
+    oracle --wait -p "Reply with only the word READY" 2>/dev/null || echo "FAILED")
+```
+
+If "READY" not in output:
+- Emit: "Oracle session unavailable -- skipping GPT review. Run `oracle-login` to authenticate."
+- **Do not block.** Continue to commit step. Review is best-effort.
+
+## Step R2: Run Review
+
+Use the `oracle-review.sh` helper:
+
+```bash
+REVIEW_OUTPUT=$(bash hooks/tools/oracle-review.sh --skip-preflight "$(git rev-parse --show-toplevel)")
+```
+
+The script:
+1. Reads AGENTS.md from the repo root
+2. Gathers evidence (git changes, commit messages, detected languages)
+3. Collects source files (filtered through `secret-scan.sh` to exclude credentials)
+4. Sends everything to GPT 5.2 Pro with a critic prompt
+5. Returns raw GPT output to stdout
+
+Pipe through the sanitizer to get clean JSON:
+
+```bash
+REVIEW_JSON=$(echo "$REVIEW_OUTPUT" | bash hooks/tools/sanitize-review.sh)
+```
+
+If sanitization fails, save raw output to `.git/interdoc/review-raw.txt` and warn -- do not block.
+
+## Step R3: Classify and Apply
+
+Parse the JSON to determine significance:
+
+```bash
+SUGGESTION_COUNT=$(echo "$REVIEW_JSON" | jq '.suggestions | length')
+HIGH_COUNT=$(echo "$REVIEW_JSON" | jq '[.suggestions[] | select(.severity == "high")] | length')
+CORRECT_COUNT=$(echo "$REVIEW_JSON" | jq '[.suggestions[] | select(.type == "correct")] | length')
+```
+
+**Significant** (prompt user): `HIGH_COUNT > 0` OR `CORRECT_COUNT > 0` OR `SUGGESTION_COUNT >= 3`
+
+**Non-controversial** (apply silently): everything else (0-2 low/medium severity, additive only)
+
+### For non-controversial changes:
+
+Apply each suggestion to the relevant section of AGENTS.md:
+- `type: "add"` -> append content to the named section
+- `type: "flag-stale"` -> add a note comment near the stale content
+
+Emit a brief confirmation: "GPT review: applied 1 minor suggestion (added X to Y section)"
+
+### For significant changes:
+
+Present suggestions to user with severity badges and ask for approval:
+
+```
+GPT 5.2 Pro reviewed your AGENTS.md and found {N} suggestions:
+
+[HIGH] {section}: {suggestion}
+  Evidence: {evidence}
+
+[MED] {section}: {suggestion}
+  Evidence: {evidence}
+
+Summary: {summary}
+
+Apply these changes? [A] All / [R] Review each / [X] Skip
+```
+
+Apply based on user choice. For [R], step through each suggestion individually.
+
+## Step R4: Update Review State
+
+After review completes (whether applied or skipped):
+
+```bash
+mkdir -p .git/interdoc
+cat > .git/interdoc/last-review.json << EOF
+{
+  "reviewedAt": "$(date -Iseconds)",
+  "reviewedCommit": "$(git rev-parse HEAD)",
+  "suggestionCount": $SUGGESTION_COUNT,
+  "applied": true
+}
+EOF
+```
+
+This prevents re-reviewing unchanged documentation on subsequent runs.
+
+---
+
 # Key Principles
 
 1. **AGENTS.md as primary** - All documentation goes in AGENTS.md (cross-AI compatible)
@@ -1405,6 +1538,7 @@ Committed: "Update AGENTS.md documentation"
 | "generate AGENTS.md" | Generation | Full project |
 | "update AGENTS.md" | Update | Changed directories |
 | "change-set update" | Update | Git diff only |
+| "review docs" / "critique docs" | Review only | GPT critique of existing AGENTS.md |
 | "doc coverage" | Report | Coverage stats |
 | "lint AGENTS.md" | Lint | Style warnings |
 | "dry run" | Any + Preview | No writes |
@@ -1426,7 +1560,11 @@ Committed: "Update AGENTS.md documentation"
 | `references/generation-mode.md` | Directory detection, spawning |
 | `references/update-mode.md` | Change detection, operations |
 | `references/harmonization.md` | CLAUDE.md migration |
+| `references/review-phase.md` | GPT critique workflow |
 | `references/output-schema.json` | Subagent validation |
 | `.claude/agents/interdocumentarian.md` | Subagent definition |
+| `hooks/tools/oracle-review.sh` | Oracle CLI wrapper for GPT review |
+| `hooks/tools/sanitize-review.sh` | Clean GPT output artifacts |
+| `hooks/tools/secret-scan.sh` | Filter secrets before Oracle upload |
 
 </quick_reference>

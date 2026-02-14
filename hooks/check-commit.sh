@@ -86,7 +86,7 @@ if [ "$COMMITS_SINCE" -ge 15 ]; then
         echo "$AGENTS_UPDATE_COMMIT" > "$PROMPTED_FOR_FILE.tmp" && mv "$PROMPTED_FOR_FILE.tmp" "$PROMPTED_FOR_FILE"
         rmdir "$LOCK_DIR"
 
-        echo "There are now $COMMITS_SINCE commits since AGENTS.md was last updated. Consider updating documentation using the Interdoc skill."
+        echo "{\"action\": \"update\", \"reason\": \"commits_mid_session\", \"commits_since\": $COMMITS_SINCE}"
     fi
     # If we didn't get the lock, another process is handling it
 fi
