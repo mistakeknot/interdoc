@@ -1,6 +1,6 @@
 {
   "name": "interdoc",
-  "version": "5.0.0",
+  "version": "5.1.0",
   "description": "Recursive AGENTS.md generator with integrated GPT 5.2 Pro critique, CLAUDE.md harmonization, incremental updates, diff previews, and smart monorepo scoping. Cross-AI compatible.",
   "author": {
     "name": "MK",
