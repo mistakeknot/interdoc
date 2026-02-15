@@ -1,5 +1,5 @@
 #!/bin/bash
-# Suggest Interdoc after significant commits accumulate mid-session
+# Suggest interdoc after significant commits accumulate mid-session
 # Triggers at 15+ commits since last AGENTS.md update
 #
 # Improvements over v1:

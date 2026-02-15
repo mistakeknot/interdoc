@@ -1,10 +1,10 @@
-# Interdoc Discovery Improvements Plan
+# interdoc Discovery Improvements Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Bead:** N/A (beads not initialized in this repo)
 
-**Goal:** Improve Interdoc discovery and invocation in Claude Code via clearer skill description, a slash command, and README/AGENTS notes.
+**Goal:** Improve interdoc discovery and invocation in Claude Code via clearer skill description, a slash command, and README/AGENTS notes.
 
 **Architecture:** Update SKILL.md frontmatter description, add a plugin command file, and add brief discovery guidance in docs. Keep scope minimal and documentation-driven.
 

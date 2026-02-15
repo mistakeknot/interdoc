@@ -1,4 +1,4 @@
-# Interdoc Dry-Run Mode Implementation Plan
+# interdoc Dry-Run Mode Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 

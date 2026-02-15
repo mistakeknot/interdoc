@@ -1,6 +1,6 @@
 # Review Phase (GPT Critique)
 
-After generating or updating AGENTS.md, Interdoc optionally sends the documentation to GPT 5.2 Pro via Oracle for independent critique. This catches blind spots that self-review misses.
+After generating or updating AGENTS.md, interdoc optionally sends the documentation to GPT 5.2 Pro via Oracle for independent critique. This catches blind spots that self-review misses.
 
 ## When Review Runs
 

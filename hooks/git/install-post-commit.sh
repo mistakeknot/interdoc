@@ -1,5 +1,5 @@
 #!/bin/bash
-# Install advisory post-commit hook for Interdoc (non-blocking).
+# Install advisory post-commit hook for interdoc (non-blocking).
 
 set -euo pipefail
 
@@ -28,4 +28,4 @@ fi
 ln -s "$HOOK_SRC" "$HOOK_DST"
 chmod +x "$HOOK_DST"
 
-echo "Installed Interdoc advisory post-commit hook."
+echo "Installed interdoc advisory post-commit hook."

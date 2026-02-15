@@ -1,4 +1,4 @@
-# Interdoc Codex CLI Install
+# interdoc Codex CLI Install
 
 This installs the interdoc skill for Codex CLI by copying the skill folder.
 

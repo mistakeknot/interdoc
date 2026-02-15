@@ -1,10 +1,10 @@
 # AGENTS.md
 
-> Cross-AI documentation for Interdoc. Works with Claude Code, Codex CLI, and other AI coding tools.
+> Cross-AI documentation for interdoc. Works with Claude Code, Codex CLI, and other AI coding tools.
 
 ## Overview
 
-**Interdoc** is a Claude Code plugin that generates and maintains AGENTS.md documentation using parallel subagents. It analyzes project structure, spawns agents per directory, and consolidates into coherent documentation.
+**interdoc** is a Claude Code plugin that generates and maintains AGENTS.md documentation using parallel subagents. It analyzes project structure, spawns agents per directory, and consolidates into coherent documentation.
 
 **Why AGENTS.md?** Claude Code reads both AGENTS.md and CLAUDE.md, but AGENTS.md is the cross-AI standard that also works with Codex CLI and other AI coding tools.
 
@@ -140,7 +140,7 @@ The plugin is distributed via `interagency-marketplace`. After pushing version c
 
 ## GPT Review Phase
 
-After generation/update, Interdoc sends AGENTS.md to GPT 5.2 Pro via Oracle for independent critique.
+After generation/update, interdoc sends AGENTS.md to GPT 5.2 Pro via Oracle for independent critique.
 
 ### How It Works
 

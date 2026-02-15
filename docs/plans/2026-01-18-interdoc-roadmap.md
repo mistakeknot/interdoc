@@ -1,4 +1,4 @@
-# Interdoc Roadmap Phase 1 Implementation Plan
+# interdoc Roadmap Phase 1 Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
@@ -6,7 +6,7 @@
 
 **Goal:** Implement Phase 1 roadmap items: change-set driven updates, doc coverage report, and lightweight style lint.
 
-**Architecture:** Add new workflow rules and optional scripts/docs in Interdoc to support selective directory analysis, coverage reporting, and lint warnings. Keep implementation documentation-driven with clear steps and opt-in flags.
+**Architecture:** Add new workflow rules and optional scripts/docs in interdoc to support selective directory analysis, coverage reporting, and lint warnings. Keep implementation documentation-driven with clear steps and opt-in flags.
 
 **Tech Stack:** Markdown docs (`skills/interdoc/SKILL.md`, `README.md`, `AGENTS.md`), optional helper script in `hooks/tools/`.
 

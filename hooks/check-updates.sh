@@ -1,5 +1,5 @@
 #!/bin/bash
-# Suggest Interdoc when documentation may be needed
+# Suggest interdoc when documentation may be needed
 # Triggers: No AGENTS.md, 7+ days since update, or 10+ commits since update
 #
 # Improvements over v1:

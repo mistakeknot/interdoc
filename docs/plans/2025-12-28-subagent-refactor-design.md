@@ -1,8 +1,8 @@
-# Interdoc Subagent Refactor Design
+# interdoc Subagent Refactor Design
 
 ## Overview
 
-Transform Interdoc from a commit-analysis tool into a recursive documentation generator using Claude Code subagents.
+Transform interdoc from a commit-analysis tool into a recursive documentation generator using Claude Code subagents.
 
 **Current state:** Hook-triggered skill that analyzes git commits and suggests CLAUDE.md updates.
 

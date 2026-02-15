@@ -9,7 +9,7 @@ Recursive AGENTS.md generator with integrated GPT 5.2 Pro critique. Generates do
 
 ## GPT Review (via Oracle)
 
-After generating/updating AGENTS.md, Interdoc sends docs to GPT 5.2 Pro for critique.
+After generating/updating AGENTS.md, interdoc sends docs to GPT 5.2 Pro for critique.
 
 - Requires Oracle CLI and active ChatGPT session
 - Auto-skips if Oracle unavailable (never blocks)

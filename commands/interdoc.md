@@ -1,6 +1,6 @@
 # /interdoc
 
-Run the Interdoc skill to generate, update, and review AGENTS.md for this repository.
+Run the interdoc skill to generate, update, and review AGENTS.md for this repository.
 
 This command should:
 - Detect whether AGENTS.md exists

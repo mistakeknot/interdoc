@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://interdoc.dev/schemas/subagent-output.v1.json",
-  "title": "Interdoc Subagent Output",
+  "title": "interdoc Subagent Output",
   "description": "Schema for validating interdocumentarian subagent JSON output",
   "type": "object",
   "required": ["schema", "mode", "directory", "warrants_agents_md"],

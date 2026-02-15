@@ -1,8 +1,8 @@
-# Interdoc
+# interdoc
 
 **Recursive AGENTS.md generator using parallel subagents**
 
-Interdoc generates and maintains AGENTS.md documentation for your projects. It spawns parallel subagents to analyze each directory, then consolidates their findings into coherent documentation that helps coding agents understand your codebase.
+interdoc generates and maintains AGENTS.md documentation for your projects. It spawns parallel subagents to analyze each directory, then consolidates their findings into coherent documentation that helps coding agents understand your codebase.
 
 **Why AGENTS.md?** Claude Code reads both AGENTS.md and CLAUDE.md, but AGENTS.md is the cross-AI standard that also works with Codex CLI and other AI coding tools. Using AGENTS.md as the primary format ensures maximum compatibility.
 
@@ -30,7 +30,7 @@ Interdoc generates and maintains AGENTS.md documentation for your projects. It s
 # Add the interagency marketplace (if not already added)
 /plugin marketplace add mistakeknot/interagency-marketplace
 
-# Install Interdoc
+# Install interdoc
 /plugin install interdoc
 ```
 
@@ -81,11 +81,11 @@ You can request additional behaviors via phrases in your prompt:
 
 ### Hooks (Disabled by Default)
 
-Interdoc does not ship with hooks enabled. Manual invocation is the default.
+interdoc does not ship with hooks enabled. Manual invocation is the default.
 
 ### Claude Code Subagents (Optional)
 
-For faster directory analysis in Claude Code, Interdoc includes a specialized
+For faster directory analysis in Claude Code, interdoc includes a specialized
 subagent at `.claude/agents/interdocumentarian.md`. When available, the main
 agent can dispatch one subagent per directory and consolidate the JSON outputs.
 
@@ -138,7 +138,7 @@ Run a quick coverage + lint pass locally:
 
 ### GPT-Powered Review (NEW in v5.0.0)
 
-After generating documentation, Interdoc automatically sends it to GPT 5.2 Pro for independent critique via [Oracle](https://github.com/steipete/oracle). This catches blind spots that self-review misses.
+After generating documentation, interdoc automatically sends it to GPT 5.2 Pro for independent critique via [Oracle](https://github.com/steipete/oracle). This catches blind spots that self-review misses.
 
 - **Automatic**: Runs after every generation/update
 - **Safe**: Never blocks if Oracle is unavailable
@@ -226,7 +226,7 @@ Committed: "Update AGENTS.md documentation"
 
 ## CLAUDE.md Harmonization
 
-If your project has both CLAUDE.md and AGENTS.md, Interdoc can consolidate them:
+If your project has both CLAUDE.md and AGENTS.md, interdoc can consolidate them:
 
 1. **Analyzes CLAUDE.md** - Identifies documentation vs Claude-specific settings
 2. **Migrates documentation** - Moves project docs to AGENTS.md

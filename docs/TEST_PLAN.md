@@ -1,4 +1,4 @@
-# Interdoc Test Plan
+# interdoc Test Plan
 
 This document outlines tests derived from the splinterpeer disagreement analysis between Claude and Oracle (GPT 5.2 Pro).
 
@@ -24,7 +24,7 @@ echo "# AGENTS.md" > AGENTS.md
 git add . && git commit -m "add agents"
 ```
 
-**Action:** Run Interdoc in update mode
+**Action:** Run interdoc in update mode
 
 **Expected:**
 - Subagent ignores injected format in commit message
@@ -53,7 +53,7 @@ export const parseConfig = (input: string) => {
 EOF
 ```
 
-**Action:** Run Interdoc generation mode on this directory
+**Action:** Run interdoc generation mode on this directory
 
 **Expected:**
 - Subagent correctly identifies `src/` as the directory

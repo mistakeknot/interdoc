@@ -1,5 +1,5 @@
 #!/bin/bash
-# Interdoc advisory audit: coverage + lightweight lint. Non-blocking.
+# interdoc advisory audit: coverage + lightweight lint. Non-blocking.
 
 set -euo pipefail
 
