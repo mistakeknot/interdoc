@@ -19,6 +19,7 @@ interdoc generates and maintains AGENTS.md documentation for your projects. It s
 - **Git-aware**: Uses commit messages and diffs for context in updates
 - **Consolidation**: Deduplicates patterns, identifies cross-cutting concerns
 - **Dry-run validation**: Validates structured output before applying
+- **Structural auto-fix mode**: Deterministic rename/deletion/link fixes without LLM tokens
 - **GPT-powered review**: Sends generated docs to GPT 5.2 Pro for independent critique
 - **Cross-AI compatible**: AGENTS.md works with Claude Code, Codex CLI, and other AI tools
 
@@ -78,6 +79,16 @@ You can request additional behaviors via phrases in your prompt:
 - **Change-set update**: "update AGENTS.md for changed files only"
 - **Coverage report**: "doc coverage" or "coverage report"
 - **Style lint**: "lint AGENTS.md" or "doc lint"
+- **Fix mode**: "fix stale references" or "interdoc fix" for structural auto-fix only
+
+### Fix Mode (Structural Auto-Fix)
+
+Use Fix mode to apply deterministic structural repairs without spending LLM tokens.
+
+- **What it does**: Applies rename/deletion/link fixes based on repository structure changes.
+- **When to use it**: After files are renamed/deleted/added and AGENTS.md cross-links become stale or broken.
+- **How to invoke it**: Use `/interdoc fix` or ask to "fix stale references".
+- **What it does not do**: It does not auto-document newly added files and it does not perform semantic/content corrections.
 
 ### Hooks (Disabled by Default)
 

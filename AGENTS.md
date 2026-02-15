@@ -10,7 +10,7 @@
 
 **Plugin Type:** Claude Code skill plugin
 **Plugin Namespace:** `interdoc` (from interagency-marketplace)
-**Current Version:** 4.4.3
+**Current Version:** 5.0.0
 
 ## Repository Structure
 
@@ -31,12 +31,22 @@
 │   │   └── install-post-commit.sh
 │   └── tools/
 │       └── interdoc-audit.sh  # Coverage + lint helper
+├── scripts/
+│   ├── drift-fix.sh       # Structural auto-fix (renames, deletions, link fixes)
+│   ├── bump-version.sh    # Version management
+│   ├── check-versions.sh  # Version consistency checker
+│   └── interdoc-generator.sh
 ├── skills/
 │   └── interdoc/
 │       └── SKILL.md         # Main skill definition
 ├── docs/
 │   ├── plans/               # Design documents
 │   └── TEST_PLAN.md         # Test cases from splinterpeer analysis
+├── tests/
+│   ├── fixtures/
+│   │   └── setup-test-repo.sh  # Test repo scaffolding
+│   ├── test-drift-fix-*.sh     # drift-fix.sh test suite
+│   └── run-all.sh              # Test runner
 ├── README.md                # User-facing documentation
 ├── CLAUDE.md                # Claude-specific settings only
 └── AGENTS.md                # This file - cross-AI documentation
@@ -63,6 +73,7 @@
 - **CLAUDE.md harmonization**: Migrates docs from CLAUDE.md → AGENTS.md
 - **Unified diff previews**: Shows actual diffs before applying
 - **Dry run + cached apply**: Preview changes and apply last preview without re-analysis
+- **Structural auto-fix**: Deterministic rename/deletion/link fixes without LLM tokens (`/interdoc fix`)
 - **JSON schema output**: Subagents return structured JSON with sentinel markers
 - **Git-aware**: Uses commit messages and diffs for update context
 - **Scalability guardrails**: Concurrency limits, batch processing for large repos
@@ -169,6 +180,22 @@ After generation/update, interdoc sends AGENTS.md to GPT 5.2 Pro via Oracle for 
 - **Oracle session expired:** Run `oracle-login` via NoVNC, complete Cloudflare check
 - **X11 not running:** Check `pgrep -f "Xvfb :99"`, restart if needed
 - **Review skipped:** Normal if Oracle unavailable — generation still works
+
+<quick_reference>
+
+## Command Quick Reference
+
+| Trigger | Mode | Scope |
+|---------|------|-------|
+| "generate AGENTS.md" | Generation | Full project |
+| "update AGENTS.md" | Update | Changed directories |
+| "change-set update" | Update | Git diff only |
+| "doc coverage" | Report | Coverage stats |
+| "lint AGENTS.md" / "doc lint" | Lint | Style warnings |
+| "fix stale references" / "interdoc fix" | Fix | Structural only (no LLM) |
+| "dry run" | Any + Preview | No writes |
+
+</quick_reference>
 
 ## Recent Changes (January 2026)
 
