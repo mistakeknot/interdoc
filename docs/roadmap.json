@@ -1,0 +1,15 @@
+{
+  "module_summary": "Interdoc synchronizes AGENTS.md/CLAUDE.md governance and enables recursive documentation maintenance with review tooling.",
+  "roadmap": {
+    "now": [
+      {"id": "IDOC-N1", "title": "Harden recursive AGENTS.md generation for nested module boundaries.", "priority": "P1"}
+    ],
+    "next": [
+      {"id": "IDOC-N2", "title": "Add cross-language AGENTS.md drift detection and repair actions.", "priority": "P2"},
+      {"id": "IDOC-N3", "title": "Publish diff-aware review suggestions for governance updates.", "priority": "P2"},
+      {"id": "IDOC-L1", "title": "Support policy inheritance presets for experimental and experimental-free modes.", "priority": "P3"}
+    ],
+    "later": [
+    ]
+  }
+}
