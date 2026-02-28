@@ -1,3 +1,7 @@
+---
+description: "Generate, update, and review AGENTS.md with GPT 5.2 Pro critique."
+---
+
 # /interdoc
 
 Run the interdoc skill to generate, update, and review AGENTS.md for this repository.
