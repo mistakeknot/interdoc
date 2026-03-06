@@ -44,6 +44,28 @@ Identify directories by source file extensions:
 | Has existing AGENTS.md | N/A | High priority |
 | Structural directory | N/A | Consider (src/, lib/, etc.) |
 
+## Static vs Discovery Classification
+
+Subagents must classify each piece of content as static prose or a discovery command.
+
+| Content type | Classification | Reasoning |
+|---|---|---|
+| File/directory listings | Discovery (`ls`, `find`) | Changes every commit |
+| Struct/enum fields | Discovery (`grep`) | Changes with code |
+| Dependency versions | Discovery (`cat Cargo.toml`) | Changes on update |
+| Test counts | Discovery (`cargo test`) | Changes every commit |
+| System execution order | Discovery (`grep`) | Changes with refactors |
+| Pipeline/middleware ordering | Discovery (`grep`) | Changes with refactors |
+| Architecture concepts | Static | Deliberate design decisions |
+| Gotchas / hard-won patterns | Static | Knowledge, not code |
+| Conventions | Static | Team agreements |
+| Workflow / process rules | Static | Process, not code |
+| Design invariants | Static | Rarely change, deliberately |
+
+**Heuristic:** If the content would go stale when a single file is added, renamed, or modified, it should be a discovery command.
+
+Discovery commands go into `discovery_commands` in the subagent output. The root agent consolidates them into a `## Discovering the Codebase` section with inline comments explaining each command.
+
 ## Subagent Spawning Strategy
 
 ### Concurrency Limits

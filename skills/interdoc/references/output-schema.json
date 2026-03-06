@@ -65,17 +65,37 @@
         "properties": {
           "section": {
             "type": "string",
-            "enum": ["Purpose", "Key Files", "Architecture", "Conventions", "Gotchas", "Commands", "Dependencies", "Recent Updates"],
-            "description": "Section heading (title case)"
+            "enum": ["Purpose", "Architecture", "Conventions", "Gotchas", "Commands", "Recent Updates"],
+            "description": "Section heading (title case). Only for STATIC content — design decisions, gotchas, conventions. Do NOT use for file listings, struct tables, dependency versions, or test counts."
           },
           "content": {
             "type": "string",
             "minLength": 1,
-            "description": "Markdown content for the section"
+            "description": "Markdown content for the section (static prose only)"
           }
         }
       },
-      "description": "Sections to include in AGENTS.md (only if warrants_agents_md is true)"
+      "description": "Static sections for AGENTS.md (only if warrants_agents_md is true). For volatile content, use discovery_commands instead."
+    },
+    "discovery_commands": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["label", "command"],
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Short description of what this command reveals (e.g. 'top-level modules', 'ECS components')"
+          },
+          "command": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Shell command an agent can run to get current truth (e.g. 'ls src/', 'grep ^pub.struct src/components.rs')"
+          }
+        }
+      },
+      "description": "Commands that replace static enumerations. For content that changes with the code: file trees, struct/enum fields, dependency versions, test counts, system ordering. Consolidated into a 'Discovering the Codebase' section."
     },
     "changes_summary": {
       "type": "string",
@@ -93,7 +113,7 @@
         "properties": {
           "op": {
             "type": "string",
-            "enum": ["add_section", "append_to_section", "replace_in_section", "delete_section"]
+            "enum": ["add_section", "append_to_section", "replace_in_section", "delete_section", "convert_to_discovery"]
           },
           "heading": { "type": "string" },
           "position": { "type": "string" },
@@ -106,7 +126,19 @@
           "replace": { "type": "string" },
           "context_before": { "type": "string" },
           "context_after": { "type": "string" },
-          "reason": { "type": "string" }
+          "reason": { "type": "string" },
+          "discovery_commands": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["label", "command"],
+              "properties": {
+                "label": { "type": "string" },
+                "command": { "type": "string" }
+              }
+            },
+            "description": "For convert_to_discovery op: commands that replace the static section"
+          }
         }
       },
       "description": "Patch operations for update mode"

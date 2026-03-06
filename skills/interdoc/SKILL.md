@@ -483,6 +483,42 @@ Your job is to analyze the code and extract information useful for coding agents
 6. Gotchas - Non-obvious behavior, known issues, TODOs worth noting
 7. Commands - Build, test, run commands if applicable
 
+**CRITICAL: Discovery commands vs static content**
+
+For any content that changes when the code changes, emit a discovery COMMAND instead of static text. Static enumerations go stale immediately and mislead agents.
+
+| Content type | Emit | Why |
+|---|---|---|
+| File/directory listings | Discovery (`ls`, `find`) | Changes every commit |
+| Struct/enum fields | Discovery (`grep`) | Changes with code |
+| Dependency versions | Discovery (`cat Cargo.toml`) | Changes on update |
+| Test counts | Discovery (`cargo test`) | Changes every commit |
+| System execution order | Discovery (`grep`) | Changes with refactors |
+| Architecture concepts | Static prose | Deliberate design decisions |
+| Gotchas / patterns | Static prose | Hard-won knowledge |
+| Conventions | Static prose | Team agreements |
+| Workflow rules | Static prose | Process, not code |
+
+**Example — instead of this (stale):**
+```
+## Source Layout
+src/
+  main.rs       — entry point
+  sim/
+    components.rs — Position, Needs, Skills
+    systems.rs    — 14 ECS systems
+```
+
+**Emit this (always fresh):**
+```
+## Discovering the Codebase
+ls src/                                              # top-level modules
+grep "^pub struct\|^pub enum" src/sim/components.rs  # ECS components
+grep "systems::" src/sim/world.rs                    # tick pipeline order
+```
+
+Use `discovery_commands` in the output JSON for this content (see output format below).
+
 **Decide if this directory warrants its own AGENTS.md:**
 - YES if: 5+ source files, has package manifest, or contains significant complexity
 - NO if: Simple, few files, or just utilities
@@ -513,10 +549,15 @@ You MUST return your response as a JSON object inside sentinel markers. Any text
   ],
   "agents_md_sections": [
     { "section": "Purpose", "content": "What this directory does..." },
-    { "section": "Key Files", "content": "| File | Purpose |\\n|------|---------|\\n..." },
-    { "section": "Architecture", "content": "How components connect..." },
+    { "section": "Architecture", "content": "How components connect (static — design decisions)..." },
     { "section": "Conventions", "content": "Naming patterns, code style..." },
     { "section": "Gotchas", "content": "Non-obvious behavior..." }
+  ],
+  "discovery_commands": [
+    { "label": "top-level modules", "command": "ls src/" },
+    { "label": "ECS components", "command": "grep \"^pub struct\\|^pub enum\" src/sim/components.rs" },
+    { "label": "dependencies + versions", "command": "cat Cargo.toml" },
+    { "label": "current test count", "command": "cargo test 2>&1 | grep passed" }
   ],
   "errors": []
 }
@@ -525,7 +566,8 @@ You MUST return your response as a JSON object inside sentinel markers. Any text
 
 **Field requirements:**
 - `warrants_agents_md`: boolean (true/false), not string
-- `agents_md_sections`: include only if `warrants_agents_md` is true
+- `agents_md_sections`: include only if `warrants_agents_md` is true. Only for STATIC content (design decisions, gotchas, conventions). Do NOT put file listings, struct tables, or version info here.
+- `discovery_commands`: array of {label, command} for content that changes with code. Each command should be a single shell command an agent can run to get current truth. Include only if `warrants_agents_md` is true.
 - `errors`: array of strings describing any issues encountered
 - All string content should be valid markdown
 ```
@@ -685,7 +727,7 @@ If the user says "apply last preview":
 
 ## Step 5: Build Root AGENTS.md
 
-Create the root AGENTS.md with this structure:
+Create the root AGENTS.md with this structure. **Discovery commands replace static enumerations** — consolidate `discovery_commands` from all subagents into the "Discovering the Codebase" section.
 
 ```markdown
 # AGENTS.md
@@ -696,14 +738,19 @@ Create the root AGENTS.md with this structure:
 
 ## Architecture
 
-[How the pieces fit together - cross-cutting concerns, data flow]
+[How the pieces fit together - cross-cutting concerns, data flow. STATIC prose — design decisions only.]
 
-## Directory Structure
+## Discovering the Codebase
 
-[Map of key directories with one-line descriptions]
-- `/src/api/` - REST API layer (has own AGENTS.md)
-- `/src/core/` - Business logic
-- `/packages/shared/` - Shared utilities (has own AGENTS.md)
+[Discovery commands consolidated from subagents. These replace static file trees, struct tables, and dependency listings.]
+
+```bash
+ls src/                                              # top-level modules
+grep "^pub struct\|^pub enum" src/sim/components.rs  # ECS components
+grep "systems::" src/sim/world.rs                    # tick pipeline order
+cat Cargo.toml                                       # dependencies + versions
+cargo test 2>&1 | grep "passed"                      # current test count
+```
 
 ## Conventions
 
@@ -900,6 +947,8 @@ You are updating documentation for: {path}
 
 Analyze the changes and propose INCREMENTAL updates. Do NOT rewrite the entire file.
 
+**IMPORTANT: Static sections that list files, structs, dependencies, or test counts should be converted to discovery commands.** If you find static enumerations in the existing AGENTS.md, use the `convert_to_discovery` operation to replace them with shell commands that always return current truth. This is the highest-value update you can make.
+
 **CRITICAL: Output Format**
 
 You MUST return your response as a JSON object inside sentinel markers. Any text outside the markers will be ignored. Do not include commentary before or after the markers.
@@ -957,6 +1006,7 @@ You MUST return your response as a JSON object inside sentinel markers. Any text
 - `append_to_section`: Add items to an existing section (for lists)
 - `replace_in_section`: Replace specific text. Include `context_before`/`context_after` for unique matching
 - `delete_section`: Remove a section (only if content was removed from codebase)
+- `convert_to_discovery`: Replace a static section (file trees, struct tables, version lists) with discovery commands. Highest-value update — eliminates staleness permanently. Provide `heading`, `reason`, and `discovery_commands` array of `{label, command}`.
 
 **Field requirements:**
 - `updates_needed`: boolean (true/false), not string
@@ -1203,13 +1253,14 @@ This prevents re-reviewing unchanged documentation on subsequent runs.
 
 # Key Principles
 
-1. **AGENTS.md as primary** - All documentation goes in AGENTS.md (cross-AI compatible)
-2. **CLAUDE.md harmonization** - Slim down CLAUDE.md to Claude-specific settings only
-3. **Incremental updates** - Append and modify, don't replace entire files
-4. **Actual diff preview** - Show real unified diffs, not just summaries
-5. **Individual review option** - Let users step through files one by one
-6. **Verify subagent writes** - Check git status after subagents complete
-7. **Preserve customizations** - Never remove user's manual additions
+1. **Discovery over snapshots** - Emit shell commands for volatile content (file trees, struct fields, versions, test counts). Static prose only for design decisions, gotchas, and conventions. A discovery command is permanently accurate; a static listing is wrong by the next commit.
+2. **AGENTS.md as primary** - All documentation goes in AGENTS.md (cross-AI compatible)
+3. **CLAUDE.md harmonization** - Slim down CLAUDE.md to Claude-specific settings only
+4. **Incremental updates** - Append and modify, don't replace entire files
+5. **Actual diff preview** - Show real unified diffs, not just summaries
+6. **Individual review option** - Let users step through files one by one
+7. **Verify subagent writes** - Check git status after subagents complete
+8. **Preserve customizations** - Never remove user's manual additions
 8. **Parallel execution** - Spawn subagents concurrently for speed
 9. **Progress reporting** - Show subagent status during execution
 10. **Smart scoping** - Offer depth control for large monorepos

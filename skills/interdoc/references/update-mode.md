@@ -27,12 +27,16 @@ Skip a directory if:
 
 | Change Type | Impact | Action |
 |-------------|--------|--------|
-| New files added | Medium | Add to Key Files |
-| Files deleted | High | Update Key Files, check Architecture |
-| File renamed | Low | Update Key Files |
-| Content changed | Variable | Check if behavior changed |
-| New dependency | High | Update Dependencies section |
-| Config changed | Medium | Update Commands or Conventions |
+| New files added | Low | No action if covered by discovery commands (e.g., `ls src/`) |
+| Files deleted | Low | No action if covered by discovery commands |
+| File renamed | Low | No action if covered by discovery commands |
+| Content changed | Variable | Check if behavior/architecture changed (static prose) |
+| New dependency | Low | No action if covered by discovery command (e.g., `cat Cargo.toml`) |
+| Config changed | Medium | Update Commands or Conventions (static) |
+| New design concept | High | Add to Architecture section (static prose) |
+| New gotcha discovered | High | Add to Gotchas section (static prose) |
+
+> **Note:** Most file-level changes no longer require AGENTS.md updates because volatile content (file trees, struct fields, dependency versions) is represented as discovery commands, not static listings. Only update static sections when design decisions, conventions, or gotchas change.
 
 ## Operation Types
 
@@ -101,16 +105,38 @@ Remove a section entirely.
 }
 ```
 
+### convert_to_discovery
+
+Replace a static section with discovery commands. This is the most important update operation — it eliminates staleness permanently.
+
+```json
+{
+  "op": "convert_to_discovery",
+  "heading": "Key Files",
+  "reason": "Static file table goes stale on every commit",
+  "discovery_commands": [
+    { "label": "source files", "command": "ls src/" },
+    { "label": "test files", "command": "ls tests/" }
+  ]
+}
+```
+
+This removes the static section content and adds the commands to the "Discovering the Codebase" section (creating it if needed).
+
 ## Stale Content Detection
 
 ### Common Staleness Indicators
 
 | Indicator | Severity | Example |
 |-----------|----------|---------|
-| File referenced but deleted | High | "See `oldFile.ts`" but file gone |
-| Outdated version numbers | Medium | "Requires Node 14" but package.json says 18 |
+| Static file listing exists | High | Replace with discovery command (`ls`, `find`) |
+| Static struct/enum table exists | High | Replace with discovery command (`grep`) |
+| Static dependency version table | High | Replace with discovery command (`cat Cargo.toml`) |
+| File referenced but deleted | Medium | Fix cross-reference in static prose |
 | Renamed function/class | Medium | "Call `initApp()`" but function renamed |
 | Changed behavior | High | "Returns null on error" but now throws |
+
+> **Upgrade path:** When updating an AGENTS.md that has static enumerations (file trees, struct tables, version tables), convert them to discovery commands. This is the highest-value update operation — it makes the doc permanently accurate.
 
 ### Stale Content Report Format
 
