@@ -1,10 +1,10 @@
 # interdoc (compact)
 
-Recursive AGENTS.md generator with GPT 5.2 Pro critique. Parallel subagents document directories; root agent consolidates.
+Recursive AGENTS.md generator. Parallel subagents document directories; root agent consolidates.
 
 ## When to Invoke
 
-"generate AGENTS.md", "update AGENTS.md", "document this repo", "review docs", "critique docs", "fix stale references", "fix docs", "interdoc fix", "auracoil"
+"generate AGENTS.md", "update AGENTS.md", "document this repo", "review docs", "fix stale references", "fix docs", "interdoc fix", "auracoil"
 
 ## Mode Detection
 
@@ -36,13 +36,6 @@ Recursive AGENTS.md generator with GPT 5.2 Pro critique. Parallel subagents docu
 2. Map changed files to directories
 3. Spawn subagents only for affected directories
 4. Merge updates into existing AGENTS.md
-
-## Review Phase (automatic)
-
-After generation/update, sends docs to GPT 5.2 Pro via Oracle for critique:
-- Non-controversial fixes applied silently
-- Significant changes prompt for approval
-- Auto-skips if Oracle unavailable
 
 ## Key Rules
 

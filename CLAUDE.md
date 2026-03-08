@@ -5,16 +5,7 @@
 
 ## Overview
 
-Recursive AGENTS.md generator with integrated GPT 5.2 Pro critique. Generates documentation using parallel subagents, then automatically sends to GPT for independent review. Non-controversial improvements are applied silently; significant changes prompt for approval.
-
-## GPT Review (via Oracle)
-
-After generating/updating AGENTS.md, interdoc sends docs to GPT 5.2 Pro for critique.
-
-- Requires Oracle CLI and active ChatGPT session
-- Auto-skips if Oracle unavailable (never blocks)
-- Non-controversial changes applied silently
-- Significant changes prompt for approval
+Recursive AGENTS.md generator. Generates documentation using parallel subagents, then consolidates into coherent project documentation.
 
 ## Claude-Specific Settings
 
