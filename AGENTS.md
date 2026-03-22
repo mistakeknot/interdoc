@@ -72,6 +72,9 @@ Recursive AGENTS.md generator with integrated GPT 5.2 Pro critique. Analyzes pro
 ```
 
 ## Philosophy Alignment Protocol
+
+**Operational implementation:** The interdoc skill loads PHILOSOPHY.md, MISSION.md, and `.interlore/proposals.yaml` (if present) in Step 0b of the generation workflow. This context informs how the project overview, architecture, and conventions sections are framed.
+
 Review [`PHILOSOPHY.md`](../../PHILOSOPHY.md) during:
 - Intake/scoping
 - Brainstorming

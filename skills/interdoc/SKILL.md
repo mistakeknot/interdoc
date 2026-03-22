@@ -205,6 +205,37 @@ Parse the collected data into a map structure:
 
 **Pass to subagents:** Include pre-collected context in subagent prompts instead of having each subagent query git independently.
 
+## Step 0b: Load Philosophy Context
+
+Read project philosophy to inform documentation alignment. This is the operational implementation of the Philosophy Alignment Protocol described in AGENTS.md.
+
+```bash
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+```
+
+**Read PHILOSOPHY.md** (if it exists at project root):
+```
+Read: ${REPO_ROOT}/PHILOSOPHY.md
+```
+Extract the core principles and design bets. Hold these in working memory — they inform:
+- How to frame the project overview (align with stated philosophy)
+- Which conventions to highlight (ones that implement philosophical principles)
+- Architecture descriptions (should reflect philosophical choices like "composition over capability")
+
+**Read MISSION.md** (if it exists at project root):
+```
+Read: ${REPO_ROOT}/MISSION.md
+```
+The mission statement anchors the project overview section.
+
+**Read interlore proposals** (optional, if `.interlore/proposals.yaml` exists):
+```
+Read: ${REPO_ROOT}/.interlore/proposals.yaml
+```
+If pending proposals exist, note them as context — the documentation may reference design patterns that interlore has detected but not yet codified. Do not act on proposals; just be aware of emerging patterns.
+
+**Skip silently** if any of these files don't exist — philosophy loading is enrichment, not a gate.
+
 ## Step 1: Analyze Project Structure
 
 Explore the project to identify directories that may warrant documentation:
@@ -733,11 +764,11 @@ Create the root AGENTS.md with this structure. **Discovery commands replace stat
 
 ## Overview
 
-[What this project does - synthesized from subagent summaries and any existing README]
+[What this project does - synthesized from subagent summaries, any existing README, and MISSION.md if present]
 
 ## Architecture
 
-[How the pieces fit together - cross-cutting concerns, data flow. STATIC prose — design decisions only.]
+[How the pieces fit together - cross-cutting concerns, data flow. STATIC prose — design decisions only. If PHILOSOPHY.md was loaded in Step 0b, frame architecture in terms of the project's stated principles.]
 
 ## Discovering the Codebase
 
