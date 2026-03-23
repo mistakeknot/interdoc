@@ -137,7 +137,8 @@ LANGUAGE_COUNTS="$(cat <<EOF
 EOF
 )"
 
-mapfile -t SOURCE_FILES < <(
+# bash 3.2 compatible (no mapfile)
+IFS=$'\n' read -r -d '' -a SOURCE_FILES < <(
   find . -maxdepth 3 -type f \
     \( -name "*.ts" -o -name "*.js" -o -name "*.py" -o -name "*.go" -o -name "*.rs" -o -name "*.java" -o -name "*.rb" -o -name "*.sh" \) \
     -not -path "./.git/*" \
@@ -146,7 +147,7 @@ mapfile -t SOURCE_FILES < <(
     -not -name ".env" \
     -not -name ".env.*" \
     | sort | head -40
-)
+) || true
 
 if [[ ${#SOURCE_FILES[@]} -eq 0 ]]; then
   SOURCE_FILES=("AGENTS.md")
