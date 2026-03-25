@@ -8,7 +8,8 @@
 # - Skips if AGENTS.md has uncommitted changes
 # - Uses git-path for reliable path resolution
 
-set -euo pipefail
+set -uo pipefail
+trap 'exit 0' ERR
 
 # Only run if we're in a git repo
 if ! git rev-parse --git-dir > /dev/null 2>&1; then
