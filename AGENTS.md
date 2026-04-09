@@ -71,22 +71,3 @@ Recursive AGENTS.md generator with integrated GPT 5.2 Pro critique. Analyzes pro
 └── AGENTS.md                # This file - cross-AI documentation
 ```
 
-## Philosophy Alignment Protocol
-
-**Operational implementation:** The interdoc skill loads PHILOSOPHY.md, MISSION.md, and `.interlore/proposals.yaml` (if present) in Step 0b of the generation workflow. This context informs how the project overview, architecture, and conventions sections are framed.
-
-Review [`PHILOSOPHY.md`](../../PHILOSOPHY.md) during:
-- Intake/scoping
-- Brainstorming
-- Planning
-- Execution kickoff
-- Review/gates
-- Handoff/retrospective
-
-For brainstorming/planning outputs, add two short lines:
-- **Alignment:** one sentence on how the proposal supports the module's purpose within Demarch's philosophy.
-- **Conflict/Risk:** one sentence on any tension with philosophy (or 'none').
-
-If a high-value change conflicts with philosophy, either:
-- adjust the plan to align, or
-- create follow-up work to update `PHILOSOPHY.md` explicitly.
