@@ -19,6 +19,6 @@ def test_agent_count():
     claude_agents = Path(__file__).resolve().parent.parent.parent / ".claude" / "agents"
     if claude_agents.is_dir():
         agent_files.extend(sorted(claude_agents.glob("*.md")))
-    assert len(agent_files) == 1, (
-        f"Expected 1 agents, found {len(agent_files)}: {[f.name for f in agent_files]}"
+    assert len(agent_files) == 5, (
+        f"Expected 5 agents, found {len(agent_files)}: {[f.name for f in agent_files]}"
     )
