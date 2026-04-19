@@ -1,4 +1,5 @@
 ---
+name: interdoc
 description: "Generate, update, and review AGENTS.md with GPT 5.2 Pro critique."
 ---
 
