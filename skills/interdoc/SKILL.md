@@ -1,6 +1,6 @@
 ---
 name: interdoc
-description: Generate, update, and review AGENTS.md. Use when asked to "generate AGENTS.md", "update AGENTS.md", "document this repo", "document this codebase", "review docs", "fix stale references", "fix docs", "interdoc fix", or "auracoil".
+description: Generate, update, and review AGENTS.md. Use when asked to "generate AGENTS.md", "update AGENTS.md", "document this repo", "document this codebase", "fix stale references", or "auracoil".
 ---
 
 <objective>
