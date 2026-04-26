@@ -53,7 +53,7 @@ Ask naturally: interdoc picks up the intent:
 
 ### GPT-Powered review
 
-After generating docs, interdoc automatically sends them to GPT 5.2 Pro for independent critique via [Oracle](https://github.com/steipete/oracle). This catches blind spots that self-review misses. Never blocks if Oracle is unavailable: the feature is additive, not required.
+After generating docs, interdoc automatically sends them to Oracle for independent critique via [Oracle](https://github.com/steipete/oracle). This catches blind spots that self-review misses. Never blocks if Oracle is unavailable: the feature is additive, not required.
 
 ### Dry run
 

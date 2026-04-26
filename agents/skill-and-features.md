@@ -33,7 +33,7 @@
 
 ## Interwatch Integration
 
-interdoc is a generator target for interwatch's drift-detection framework. When interwatch detects that AGENTS.md has drifted (files renamed/deleted/created, commit threshold exceeded), it dispatches to `interdoc:interdoc` for regeneration. interdoc does not compute drift scores — interwatch owns detection, interdoc owns generation. The `scripts/interdoc-generator.sh` marker file signals generator availability to interwatch's discovery system.
+interdoc is a generator target for interwatch's drift-detection framework. When interwatch detects that AGENTS.md has drifted (files renamed/deleted/created, commit threshold exceeded), it dispatches to `interdoc:interdoc-engine` for regeneration. interdoc does not compute drift scores — interwatch owns detection, interdoc owns generation. The `scripts/interdoc-generator.sh` marker file signals generator availability to interwatch's discovery system.
 
 ## Hooks (Disabled by Default)
 

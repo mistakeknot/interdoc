@@ -1,7 +1,7 @@
 # interdoc Philosophy
 
 ## Purpose
-Recursive AGENTS.md generator with integrated GPT 5.2 Pro critique, CLAUDE.md harmonization, incremental updates, diff previews, and smart monorepo scoping. Cross-AI compatible.
+Recursive AGENTS.md generator with integrated Oracle critique, CLAUDE.md harmonization, incremental updates, diff previews, and smart monorepo scoping. Cross-AI compatible.
 
 ## North Star
 Optimize for trustworthy documentation generation: structural correctness first, then incremental update quality and critique loops.

@@ -1,6 +1,6 @@
 # GPT Review Phase
 
-After generation/update, interdoc sends AGENTS.md to GPT 5.2 Pro via Oracle for independent critique.
+After generation/update, interdoc sends AGENTS.md to Oracle for independent critique.
 
 ## How It Works
 

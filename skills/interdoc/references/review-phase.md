@@ -1,6 +1,6 @@
 # Review Phase (GPT Critique)
 
-After generating or updating AGENTS.md, interdoc optionally sends the documentation to GPT 5.2 Pro via Oracle for independent critique. This catches blind spots that self-review misses.
+After generating or updating AGENTS.md, interdoc optionally sends the documentation to Oracle for independent critique. This catches blind spots that self-review misses.
 
 ## When Review Runs
 
@@ -57,7 +57,7 @@ See `hooks/tools/oracle-review.sh` for the exact prompt template.
 Show the suggestions grouped by section with severity badges, then ask:
 
 ```
-GPT 5.2 Pro found N suggestions:
+Oracle found N suggestions:
 - [HIGH] Section: suggestion text
 - [MED] Section: suggestion text
 

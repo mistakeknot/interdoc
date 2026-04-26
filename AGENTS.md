@@ -1,6 +1,6 @@
 # AGENTS.md — interdoc
 
-Recursive AGENTS.md generator with integrated GPT 5.2 Pro critique. Analyzes project structure via parallel subagents, consolidates into coherent documentation, and optionally sends to GPT for independent review.
+Recursive AGENTS.md generator with integrated Oracle critique. Analyzes project structure via parallel subagents, consolidates into coherent documentation, and optionally sends to GPT for independent review.
 
 **Plugin Type:** Claude Code skill plugin
 **Plugin Namespace:** `interdoc` (from interagency-marketplace)

@@ -1,6 +1,6 @@
 ---
-name: interdoc
-description: Generate, update, and review AGENTS.md. Use when asked to "generate AGENTS.md", "update AGENTS.md", "document this repo", "document this codebase", "fix stale references", or "auracoil".
+name: interdoc-engine
+description: Use when invoked from /interdoc command — runs the AGENTS.md generation, harmonization, and Oracle-critique pipeline. Internal engine; users invoke via the slash command, not directly.
 ---
 
 <objective>

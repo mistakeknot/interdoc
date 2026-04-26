@@ -5,7 +5,7 @@
 
 ## What interdoc Is
 
-interdoc is a recursive AGENTS.md generator for Claude Code. It walks a project tree, spawns parallel subagents to analyze each directory, consolidates their findings into coherent cross-AI documentation, and then sends the result to GPT 5.2 Pro for independent critique via Oracle. The generation step (Claude) and the review step (GPT) are structurally separated: one model cannot review its own output. Non-controversial suggestions from GPT are applied silently; significant ones prompt the user.
+interdoc is a recursive AGENTS.md generator for Claude Code. It walks a project tree, spawns parallel subagents to analyze each directory, consolidates their findings into coherent cross-AI documentation, and then sends the result to Oracle for independent critique via Oracle. The generation step (Claude) and the review step (GPT) are structurally separated: one model cannot review its own output. Non-controversial suggestions from GPT are applied silently; significant ones prompt the user.
 
 The plugin exists at the intersection of two conventions that currently have no tooling: AGENTS.md as the emerging cross-AI documentation standard, and cross-model review as a forcing function for documentation quality. interdoc is what happens when both are taken seriously at once.
 
@@ -31,7 +31,7 @@ Documentation is agent memory. AGENTS.md files are not commentary — they are t
 - Generates AGENTS.md files recursively across a project tree using parallel subagents
 - Detects and applies incremental updates when documentation already exists
 - Harmonizes CLAUDE.md and AGENTS.md (migrates project docs to AGENTS.md, slims CLAUDE.md to settings only)
-- Sends generated docs to GPT 5.2 Pro for independent critique via Oracle; classifies and applies or surfaces suggestions
+- Sends generated docs to Oracle for independent critique via Oracle; classifies and applies or surfaces suggestions
 - Repairs structural drift (broken cross-links, stale references after renames) without spending LLM tokens
 
 **What interdoc does not do:**
