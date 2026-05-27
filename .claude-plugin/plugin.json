@@ -11,5 +11,10 @@
   ],
   "commands": [
     "./commands/interdoc.md"
+  ],
+  "peerDependencies": [
+    "intercheck",
+    "interlore",
+    "interwatch"
   ]
 }
