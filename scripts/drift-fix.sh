@@ -16,17 +16,32 @@ for arg in "$@"; do
   esac
 done
 
-for required_cmd in git jq awk sed flock mktemp cmp dirname basename sort find realpath grep; do
+for required_cmd in git jq awk sed python3 mktemp cmp dirname basename sort find grep; do
   if ! command -v "$required_cmd" >/dev/null 2>&1; then
     jq -n --arg error "missing required command: $required_cmd" '{error: $error}'
     exit 1
   fi
 done
 
+# Python's realpath handles symlinks and missing leaves on both macOS and Linux;
+# BSD realpath lacks the GNU -m and --relative-to options used by this command.
+canonical_path() {
+  python3 - "$@" <<'PY'
+import os
+import sys
+
+path = os.path.realpath(sys.argv[1])
+if len(sys.argv) == 3:
+    path = os.path.relpath(path, os.path.realpath(sys.argv[2]))
+print(path)
+PY
+}
+
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || {
   jq -n --arg error "not a git repository" '{error: $error}'
   exit 1
 }
+REPO_ROOT="$(canonical_path "$REPO_ROOT")"
 cd "$REPO_ROOT"
 
 mapfile -t AGENTS_FILES < <(find . -type f -name "AGENTS.md" -not -path "*/node_modules/*" -not -path "*/.git/*" | sort)
@@ -166,10 +181,27 @@ if [ "$DRY_RUN" = true ]; then
   exit 0
 fi
 
-mkdir -p .git/interdoc
-exec 9>.git/interdoc/fix.lock
-if ! flock -n 9; then
-  jq -n --arg error "another drift-fix instance is running" '{error: $error}'
+lock_path="$(git rev-parse --git-path interdoc/fix.lock)"
+mkdir -p "$(dirname "$lock_path")"
+exec 9>"$lock_path"
+lock_rc=0
+# The inherited open description stays in the shell after Python exits, so the
+# advisory lock lasts through all replacements. Do not reopen/unlink this file.
+python3 - <<'PY' || lock_rc=$?
+import fcntl
+import sys
+
+try:
+    fcntl.flock(9, fcntl.LOCK_EX | fcntl.LOCK_NB)
+except BlockingIOError:
+    sys.exit(75)
+PY
+if [ "$lock_rc" -ne 0 ]; then
+  lock_error="could not acquire drift-fix lock"
+  if [ "$lock_rc" -eq 75 ]; then
+    lock_error="another drift-fix instance is running"
+  fi
+  jq -n --arg error "$lock_error" '{error: $error}'
   exit 1
 fi
 
@@ -308,7 +340,7 @@ fix_broken_links() {
   mapfile -t links_in_file < <(printf '%s\n' "$grep_output" | sed -E 's/^\((.*)\)$/\1/' | sort -u)
 
   local link_value link_path link_suffix resolved_abs resolved_rel
-  local best_old_dir best_new_dir old_dir new_dir candidate_rel new_link_path new_link_value
+  local best_old_dir best_new_dir old_dir new_dir candidate_rel candidate_abs new_link_path new_link_value
   for link_value in "${links_in_file[@]}"; do
     if [[ "$link_value" == /* ]] || [[ "$link_value" == *"://"* ]]; then
       continue
@@ -321,12 +353,15 @@ fix_broken_links() {
       link_suffix="#${link_value#*#}"
     fi
 
-    resolved_abs="$(realpath -m "$file_dir_abs/$link_path")"
+    resolved_abs="$(canonical_path "$file_dir_abs/$link_path")" || return 1
     if [ -f "$resolved_abs" ]; then
       continue
     fi
 
-    resolved_rel="$(realpath -m --relative-to="$REPO_ROOT" "$resolved_abs")"
+    resolved_rel="$(canonical_path "$resolved_abs" "$REPO_ROOT")" || return 1
+    case "$resolved_rel" in
+      ..|../*|/*) continue ;;
+    esac
 
     best_old_dir=""
     best_new_dir=""
@@ -349,11 +384,16 @@ fix_broken_links() {
     fi
 
     candidate_rel="${resolved_rel/#$best_old_dir/$best_new_dir}"
-    if [ ! -f "$REPO_ROOT/$candidate_rel" ]; then
+    candidate_abs="$(canonical_path "$REPO_ROOT/$candidate_rel")" || return 1
+    case "$candidate_abs" in
+      "$REPO_ROOT"/*) ;;
+      *) continue ;;
+    esac
+    if [ ! -f "$candidate_abs" ]; then
       continue
     fi
 
-    new_link_path="$(realpath -m --relative-to="$file_dir_abs" "$REPO_ROOT/$candidate_rel")"
+    new_link_path="$(canonical_path "$candidate_abs" "$file_dir_abs")" || return 1
     new_link_value="${new_link_path}${link_suffix}"
 
     if replace_in_file "$agents_file" "$link_value" "$new_link_value"; then

@@ -2,6 +2,14 @@
 
 Recursive AGENTS.md generator. Parallel subagents document directories; root agent consolidates.
 
+Resolve this installed skill's symlink. Set `INTERDOC_ROOT` to the plugin two
+directories above the resolved skill directory, and `PROJECT_ROOT` to the
+target repository. Read `references/` relative to the skill directory. Discover
+callable host tools: use authorized delegation when available, otherwise perform
+the directory analysis sequentially. Claude Task/slash syntax is not a Codex API.
+When the task requires critique, preserve that gate if its provider is unavailable.
+Otherwise follow the optional review phase's skip rules; do not substitute providers.
+
 ## When to Invoke
 
 "generate AGENTS.md", "update AGENTS.md", "document this repo", "review docs", "fix stale references", "fix docs", "interdoc fix", "auracoil"
@@ -15,9 +23,9 @@ Recursive AGENTS.md generator. Parallel subagents document directories; root age
 
 ## Fix Mode
 
-1. Run `scripts/drift-fix.sh --dry-run` — shows renames, deletions, new files
+1. Run `(cd "$PROJECT_ROOT" && bash "$INTERDOC_ROOT/scripts/drift-fix.sh" --dry-run)` — shows renames, deletions, new files
 2. Show diff preview to user
-3. Apply with `scripts/drift-fix.sh`
+3. Apply with `(cd "$PROJECT_ROOT" && bash "$INTERDOC_ROOT/scripts/drift-fix.sh")`
 4. Suggest full `/interdoc` if new files detected
 
 ## Generation Mode
